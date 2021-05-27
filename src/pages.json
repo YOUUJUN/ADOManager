@@ -1,0 +1,186 @@
+{
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			// uni-ui
+			"^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue",
+
+			//uview-ui
+			"^u-(.*)": "uview-ui/components/u-$1/u-$1.vue"
+		}
+	},
+
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "",
+				"app-plus" : {
+					"scrollIndicator" : "none",
+					"titleNView" : {
+						"titleAlign": "center",
+						"tags" : [
+							{
+								"tag" : "img",
+								"src" : "/static/logo.png",
+								"position" : {
+									"left" : "auto",
+									"top" : "auto",
+									"width" : "110px",
+									"height" : "100%"
+								}
+							}
+						],
+						"buttons": [
+							{
+								"text": "\ue606",
+								"colorPressed" : "#a0cfff",
+								"fontSrc" : "/static/iconfont/iconfont.ttf",
+								"fontSize" : "20px",
+								"float": "left",
+								"width": "40px"
+							},
+							{
+								"text": "\ue603",
+								"colorPressed" : "#a0cfff",
+								"fontSrc" : "/static/iconfont/iconfont.ttf",
+								"fontSize" : "18px",
+								"float": "right",
+								"width": "40px"
+							}
+						]
+					}
+				}
+			}
+		},
+		{
+			"path": "pages/post/post",
+			"style": {
+				"navigationBarTitleText": "车辆录入",
+				"app-plus" : {
+					"scrollIndicator" : "none"
+				}
+			}
+		},
+		{
+			"path": "pages/carList/carList",
+			"style": {
+				"navigationBarTitleText": "暂存车辆",
+				"enablePullDownRefresh": true,
+				"app-plus" : {
+                    "titleNView" : {
+                        "type" : "transparent",
+                        "titleColor": "red",
+                        "backgroundColor": "#007AFF",
+                        "buttons": [{
+                            "fontSrc": "/static/uni.ttf",
+                            "text": "\ue466",
+                            "width": "45px",
+                            "fontSize": "28px",
+                            "color": "rgba(0,0,0,0.6)",
+                            "background": "rgba(0,0,0,0.3)"
+                        }],
+                        "backButton" : {
+                            "background" : "rgba(0,0,0,0.3)",
+                            "color" : "rgba(0,0,0,0.6)"
+                        },
+                        "searchInput": {
+                            "backgroundColor": "#fff",
+                            "borderRadius": "6px",
+                            "placeholder": "请输入"
+                        }
+                    }
+
+				}
+			}
+		},
+		{
+			"path": "pages/carSearch/carSearch",
+			"style": {
+				"navigationBarTitleText": "车辆查询",
+				"enablePullDownRefresh": true,
+				"app-plus" : {
+					"titleNView" : {
+						"type" : "transparent",
+						"titleColor": "red",
+						"backgroundColor": "#007AFF",
+						"buttons": [{
+							"fontSrc": "/static/uni.ttf",
+							"text": "\ue466",
+							"width": "45px",
+							"fontSize": "28px",
+							"color": "rgba(0,0,0,0.6)",
+							"background": "rgba(0,0,0,0.3)"
+						}],
+						"backButton" : {
+							"background" : "rgba(0,0,0,0.3)",
+							"color" : "rgba(0,0,0,0.6)"
+						},
+						"searchInput": {
+							"backgroundColor": "#fff",
+							"borderRadius": "6px",
+							"placeholder": "请输入"
+						}
+					}
+
+				}
+			}
+		},
+		{
+			"path": "pages/carNo/carNo",
+			"style": {
+				"navigationBarTitleText": "车牌号输入",
+				"app-plus" : {
+					"scrollIndicator" : "none"
+				}
+			}
+		},
+		{
+			"path": "pages/carInfo/carInfo",
+			"style": {
+				"navigationBarTitleText": "车辆信息",
+				"app-plus" : {
+					"scrollIndicator" : "none"
+				}
+			}
+		},
+		{
+			"path": "pages/user/user",
+			"style": {
+				"navigationBarTitleText": "我的"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+
+	"tabBar": {
+		"color": "#7A7E83",
+		"selectedColor": "#007AFF",
+		"borderStyle": "black",
+		"backgroundColor": "#F8F8F8",
+		"midButton" : {
+			"height":"45px",
+			"iconWidth" : "40px",
+			"iconPath": "static/add.png"
+		},
+		"list": [
+			{
+				"pagePath": "pages/index/index",
+				"iconPath": "static/basic/home.png",
+				"selectedIconPath": "static/basic/home.png",
+				"text": "首页"
+			},
+			{
+				"pagePath": "pages/user/user",
+				"iconPath": "static/basic/my.png",
+				"selectedIconPath": "static/basic/my.png",
+				"text": "我的"
+			}
+		]
+	}
+}
