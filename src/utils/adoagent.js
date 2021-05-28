@@ -1,5 +1,4 @@
-var ado_status = {
-    // 数据变动事件方式0/整体变动:2/增加行:1/修改行:3/删除行
+﻿﻿var ado_status = {
     REFRESH: '0',
     ROW_NOEDIT: '0',
     ROW_ADD: '2',
@@ -26,26 +25,35 @@ var ado_status = {
         dataPage: null,
         // 是否存在修改行为
         isEdit: false,
-        eventObject: {},
+        eventObject: null,
         editCols: null,// 可以修改的列序号
-
+        // 监听数据变动事件
+        // 使用的时候当做了数组，结果赋值的时候是null，
+        // 这样是有问题的
+        // listen: [],
         // 是否正在刷新
         locked: false,
         preRowNum: -1,
         vars: null,
 
         // 数据加载时延时执行的状态,用于记录响应服务器端数据更新时的状态
+        //delayType: '',
         delayVar: null,
         delayEvents: null,
+        onLoad: null,// 加载完成时的事件函数
         isInited: false,
         maxRowID: 0,
-
+        maxEvents:10,//在超过10行数据变动事件时，自动转换为REFRESH事件
         getDataPage: function () {
             return this.dataPage;
         },
 
         init: function (props) {
             // 创建结构
+            if (props['extend']) {
+                var obj = $e.fn.createObject(props['extend']);
+                $e.fn.extend(obj, this, true);
+            }
             var cls = props.columns;
             if (cls) {
                 var column;
@@ -59,7 +67,6 @@ var ado_status = {
             }
             this.editCols = props.updateColumns ? props.updateColumns.split(",") : [];
             this.pageLoadReset = $e.fn.getBoolean(props['pageLoadReset'], true);
-
             $e.forActiveCell(props, this);
             // 实例化 dataPage
             this.dataPage = new DataPage(this, props.pageRows, props.page, props.pages);
@@ -67,8 +74,7 @@ var ado_status = {
 
         loadData: function (rds) {
             var addType = rds.type;
-            var chgRow = -1;
-
+            var chgRow = -1;//, chgRowID = -1;
             // 行数据是个数组
             var rowdata = null, rs = rds.rowsData, status;
             var delRows = 0;
@@ -77,9 +83,11 @@ var ado_status = {
 
             try {
                 this.locked = true;
-                this.delayVar = null;
-                var delayEvents = {};
+                //this.delayType = '';
                 // 是否转换列名
+                //var range={};
+                this.delayVar=null;
+                var delayEvents = {'size':0};
                 if (addType == "refresh") {
                     // 刷新,清空数据
                     if (rds.page <= 0 || this.pageLoadReset) {
@@ -87,33 +95,30 @@ var ado_status = {
                     }
                     // 修改page状态
                     this.dataPage.changePage(rds.page, rds.pages);
-                    this.dataPage.refreshRows = 0;
                     this.addDelayEvent(delayEvents, this.buildEventObject(ado_status.REFRESH));
-
+                    this.dataPage.refreshRows = 0;
+                    //只有连续分页才有意义
                 } else if (addType == "sync") {
                     // 同步,状态为服务器端的状态
                     this.clearEdit(rds.status);
                 } else {
                     this.isEdit = (rds.status != ado_status.ROW_NOEDIT);
                 }
-
                 var isEdit = this.isEdit;
                 var editData = null;
-
                 if (rs && rs.length > 0) {
                     var rowid;
                     // 遍历rowsData
                     for (var i = 0; i < rs.length; i++) {
                         rowid = rs[i].__rowid;
-
                         if (addType == "refresh") {
+                            // 初始加载
                             if (!this.pageLoadReset && rowid <= this.maxRowID) {
                                 if (this.findRowByRowID(rowid) >= 0) {
-                                    // 防止重复加入行
+                                    //防止重复加入行
                                     continue;
                                 }
                             }
-                            // 初始加载
                             rowdata = this.createDefaultRowData("0", rowid);
                             // 使用别名,
                             // 获取每一行数据
@@ -129,51 +134,45 @@ var ado_status = {
                                 chgRow = row;
                                 rowdata = this.getRowData(row, true);
                                 status = rs[i].__status;
-                                evt = this.buildEventObject(status, row,
-                                    rowdata.__rowid, -1);
+                                // 修改行的行号，
+                                //chgRowID = rowid;
+                                evt = this.buildEventObject(status, row, rowdata.__rowid, -1);
                                 if (status == ado_status.ROW_DELETE) {
                                     evt.rowData = rowdata;
                                     this.delRow(row, true, true);
                                     delRows++;
                                 } else {
                                     // 用新值覆盖旧值
-                                    editData = this.setRowProperties(rowdata,
-                                        rs[i]);
+                                    editData = this.setRowProperties(rowdata, rs[i]);
                                     if (editData.cols == 1) {
                                         evt.newValue = editData.newValue;
                                         evt.oldValue = editData.oldValue;
                                         evt.columnIndex = editData.columnIndex;
-                                        evt.columnName = this
-                                            .getColumnName(editData.columnIndex);
+                                        evt.columnName = this.getColumnName(editData.columnIndex);
                                     }
                                     editRows++;
                                 }
                                 this.addDelayEvent(delayEvents, evt);
                             } else {
                                 // add
-                                rowdata = this.createDefaultRowData(
-                                    ado_status.ROW_ADD, rowid);
+                                rowdata = this.createDefaultRowData(ado_status.ROW_ADD, rowid);
                                 this.maxRowID = Math.max(this.maxRowID, rowid);
                                 row = this.preRowNum;
                                 if (row >= 0) {
                                     chgRow = this.insertRow(row, rowdata);
                                     this.preRowNum = chgRow + 1;
                                 } else {
-                                    row = this.getDataPage().getRealRow(
-                                        rs[i].__rownum);
+                                    row = this.getDataPage().getRealRow(rs[i].__rownum);
                                     chgRow = this.insertRow(row, rowdata);
                                 }
                                 this.setRowProperties(rowdata, rs[i]);
-                                this.addDelayEvent(delayEvents, this
-                                    .buildEventObject(ado_status.ROW_ADD,
-                                        chgRow, rowdata.__rowid, -1));
+                                this.addDelayEvent(delayEvents, this.buildEventObject(ado_status.ROW_ADD, chgRow, rowdata.__rowid, -1));
                                 addRows++;
                             }
                         }
                     }
                 }
                 this.isEdit = isEdit;
-
                 if (rds.page == 0 && addType == "refresh") {
                     this.dataPage.refreshRows = this.getRowsCount();
                 }
@@ -181,19 +180,20 @@ var ado_status = {
                 if (rs && !$e.fn.isEmptyObject(rs)) {
                     var d = [];
                     for (var k in rs) {
-                        d.push({
-                            name: k,
-                            oldValue: this.vars[k] || null,
-                            value: rs[k]
-                        });
+                        d.push({name: k, oldValue: this.vars[k] || null, value: rs[k]});
                         this.setVar(k, rs[k], true);
                     }
                     //if (addType != 'refresh') {
-                    // 刷新时，不触发变量变动事件
+                    //刷新时，不触发变量变动事件
                     this.delayVar = d;//this.delayVar ? this.delayVar.concat(d) : d;
                     //}
                 }
-                this.delayEvents = $e.fn.isEmptyObject(delayEvents) ? null : delayEvents;
+                this.delayEvents = $e.fn.isEmptyObject(delayEvents)?null:delayEvents;
+                if (this.delayEvents && this.delayEvents['size']>this.maxEvents){
+                	this.delayEvents={'size':0};
+                    this.addDelayEvent(this.delayEvents, this.buildEventObject(ado_status.REFRESH));
+                }
+                
             } catch (error) {
                 throw error;
             } finally {
@@ -210,6 +210,7 @@ var ado_status = {
                 es = delayobj[event.eventType] = [];
             }
             es.push(event);
+            delayobj['size']=(delayobj['size']||0)+1;
         },
         /**
          * 插入一行,内部调用，没有触发任何状态改变和事件
@@ -228,10 +229,11 @@ var ado_status = {
                         return i;
                     }
                 }
-            }
+            } // else {
             // 返回插入的下标
             this.rows.push(rowdata);
             return this.rows.length - 1;
+            // }
         },
 
         /**
@@ -242,11 +244,16 @@ var ado_status = {
         prepareInsertRow: function (rownum) {
             this.preRowNum = rownum;
         },
-
+        /**
+         * @deprecated #see prepareInsertRow
+         * @param rownum
+         */
+        prepareInsert: function (rownum) {
+            this.preRowNum = rownum;
+        },
         getPrepareInsertRow: function () {
             return this.preRowNum;
         },
-
         /**
          * 移动行数据
          *
@@ -289,8 +296,7 @@ var ado_status = {
             if (rowdata) {
                 if (!stop) {
                     // 触发delete事件
-                    var eo = this.buildEventObject(ado_status.ROW_DELETE, row,
-                        rowdata.__rowid, -1);
+                    var eo = this.buildEventObject(ado_status.ROW_DELETE, row, rowdata.__rowid, -1);
                     eo.rowData = rowdata;
                     if (this.editCols.length > 0) {
                         this.isEdit = true;
@@ -311,15 +317,19 @@ var ado_status = {
          * @param to
          * @returns 查找到的行号
          */
-        findRow: function (method, from, to) {
+        findRow: function (exp_func, from, to) {
             // 这行代码的意义？
             from = from || 0;
             if (!to || to > this.rows.length) {
                 to = this.rows.length;
             }
+            // var p = [this];
+            if (typeof exp_func == "string") {
+                exp_func = createDirectFunc(exp_func);
+            }
             var i = -1, f = false, p = [this];
             for (i = from; (i < to) && (!f); i++) {
-                f = method.apply(this.rows[i], p);
+                f = exp_func.apply(this.rows[i], p);
                 if (f) {
                     break;
                 }
@@ -350,12 +360,7 @@ var ado_status = {
          * @returns
          */
         setRowProperties: function (rowdata, props) {
-            var c = {
-                cols: 0,
-                col: -1,
-                oldValue: null,
-                newValue: null
-            };
+            var c = {cols: 0, col: -1, oldValue: null, newValue: null};
             for (var key in props) {
                 if (key.charAt(0) == 'c') {
                     var col = key.substring(1) - 0; // 从1开始到后面所有字符
@@ -375,68 +380,38 @@ var ado_status = {
         },
 
         /**
-         * 在主数据缓存区获取一行的属性
+         * 获取行属性
+         * @deprecated by getValuesAt
          *
-         * @param row_rowdata
+         * @param rown
          * @param colsname
-         *            只能是用","分割的字符串或字符串数组
          * @returns
          */
-        getRowProperties: function (row_rowdata, colnames, hasvar) {
-            var rs = {};
-            var rd;
-            if (!isNaN(row_rowdata)) {
-                // row_rowdata >>> 0;
-                if (this.rows.rangeCheck(row_rowdata)) {
-                    rd = this.rows[row_rowdata];
-                } else {
-                    throw "In ado:" + this.name + ",getRowProperties(row),row "
-                    + row_rowdata + " over range !!!";
-                }
-            } else {
-                rd = row_rowdata;
-            }
-            if (rd) {
-                if (colnames) {
-                    var ns = (colnames instanceof Array) ? colnames : colnames
-                        .toLowerCase().split(",");
-                    for (var i = 0; i < ns.length; i++) {
-                        rs[ns[i]] = rd[ns[i]];
-                    }
-                } else {
-                    rs.__rowid = rd.__rowid;
-                    rs.__rownum = rd.__rownum;
-                    rs.__status = rd.__status;
-                    rs.__status2 = rd.__status2;
-                    for (var j = 0; j < this.columns.length; j++) {
-                        rs[this.columns[j].name] = rd.__data[j];
-                    }
-                }
-            }
-            if (hasvar) {
-                $e.fn.extend(this.vars, rs);
-            }
-            return rs;
+        getRowProperties: function (row, colsname) {
+            return this.getValuesAt(row, colsname);
         },
+
+
 
         /**
          * 在主数据缓存区获取多行的属性数组
          *
-         * @param method
+         * @param exp_func
          * @param colsname
          * @returns {Array}
          */
-        getRowsPropertiesWhere: function (method, colsname) {
-            var rd = [];
-            var p = [];
-            for (var i = 0; i < this.rows.length; i++) {
-                p[0] = this.rows[i];
-                if (method.apply(this, p)) {
-                    rd.push(this.getRowProperties(i, colsname));
-                }
-            }
-            return rd;
-        },
+        // getRowsPropertiesWhere: function (exp_func, colsname) {
+        //     var rd = [];
+        //     exp_func = createDirectFunc(exp_func);
+        //     var p = [];
+        //     for (var i = 0; i < this.rows.length; i++) {
+        //         p[0] = this.rows[i];
+        //         if (exp_func.apply(this, p)) {
+        //             rd.push(this.getRowProperties(i, colsname));
+        //         }
+        //     }
+        //     return rd;
+        // },
 
         /**
          * 在主数据缓存区获取行的状态
@@ -447,10 +422,23 @@ var ado_status = {
         getRowStatus: function (row) {
             return this.rows[row].__status;
         },
-
         getRowRealStatus: function (row) {
             return this.rows[row].__status2;
         },
+
+        /**
+         * 在主数据缓存区根据id获取一行的属性
+         *
+         * @param rowid
+         *            数据行的rowid
+         * @param colsname
+         *            数组列名(如['name','age'])或用",'连接的字段名字符串(如'name,age')
+         * @returns
+         */
+        // getRowPropertiesById : function(rowid, colsname) {
+        // 	var r = this.findRowByRowID(rowid);
+        // 	return r >= 0 ? this.getRowProperties(r, colsname) : null;
+        // },
 
         /**
          * 获取行数据,一般只用于内部调用
@@ -476,15 +464,13 @@ var ado_status = {
                 + " not exists !!!";
             }
         },
-
         getRowsData: function (fromrow, torow) {
             var r = 0, rows = new Array(torow - fromrow);
             for (var i = fromrow; i < torow; i++) {
                 rows[r++] = this.rows[i];
             }
-            return rows;
+            return r;
         },
-
         /**
          * 获取指定行的rowid
          *
@@ -492,11 +478,7 @@ var ado_status = {
          * @returns
          */
         getRowID: function (row) {
-            if (this.rows && this.rows[row]) {
-                return this.rows[row].__rowid;
-            } else {
-                return null;
-            }
+            return this.rows[row].__rowid;
         },
 
         /**
@@ -506,7 +488,7 @@ var ado_status = {
          * @param col
          * @returns
          */
-        getValueAt: function (row, col) {
+        getValueAt: function (row, col,ifnullvalue) {
             if (this.rows.rangeCheck(row)) {
                 var c1 = col;
                 if (isNaN(col)) {
@@ -520,23 +502,14 @@ var ado_status = {
                 if (!this.rows[row].__data.rangeCheck(c1)) {
                     throw ("In getValueAt,column '" + col + "' not exists !");
                 }
-                return this.rows[row].__data[c1];
+                var value=this.rows[row].__data[c1];
+                return ((value==null || value=='') && ifnullvalue!=undefined)?ifnullvalue:value;
             } else {
-                throw 'In ado ' + this.name + ",getRowData row:" + row
-                + " not exists !!!";
+                throw 'In ado ' + this.name + ",getRowData row:" + row + " not exists !!!";
             }
         },
 
-        /**
-         * 获取行属性
-         *
-         * @param rown
-         * @param colsname
-         * @returns
-         */
-        getValuesAt: function (row, colsname) {
-            return this.getRowProperties(row, colsname);
-        },
+
 
         /**
          * 修改主缓存数据指定行指定列的值
@@ -558,8 +531,8 @@ var ado_status = {
                 col = col_name_index - 0;
             }
             if (!this.rows.rangeCheck(row)) {
-                throw new Error("In AdoAgent:" + this.name + ",setValueAt:row "
-                    + row + " not exists !!!");
+                throw new Error("In AdoAgent:" + this.name
+                    + ",setValueAt:row " + row + " not exists !!!");
             } else if (!this.columns.rangeCheck(col)) {
                 throw new Error("In AdoAgent:" + this.name
                     + ",setValueAt:column " + col_name_index
@@ -569,12 +542,10 @@ var ado_status = {
                 var cln = this.columns[col];
                 var v1 = rd.__data[col];
                 if (value) {
-                    value = $e.fn
-                        .parseValue(value, cln.dataType, cln.precision);
+                    value = $e.fn.parseValue(value, cln.dataType, cln.precision);
                 }
-                if (v1 != value) {
-                    var rs = this.buildEventObject(ado_status.ROW_EDIT, row,
-                        rd.__rowid, col);
+                if (v1 !== value) {
+                    var rs = this.buildEventObject(ado_status.ROW_EDIT, row, rd.__rowid, col);
                     rs.rowData = rd;
                     rs.oldValue = v1;
                     rs.newValue = value;
@@ -598,6 +569,49 @@ var ado_status = {
         },
 
         /**
+         * 在主数据缓存区获取一行的属性
+         *
+         * @param row_rowdata
+         * @param colsname
+         *            只能是用","分割的字符串或字符串数组
+         * @returns
+         */
+        getValuesAt: function (row_rowdata, colnames, hasvar) {
+            var rs = {};
+            var rd;
+            if (!isNaN(row_rowdata)) {
+                // row_rowdata >>> 0;
+                if (this.rows.rangeCheck(row_rowdata)) {
+                    rd = this.rows[row_rowdata];
+                } else {
+                    throw "In ado:" + this.name + ",getValuesAt(row),row "
+                    + row_rowdata + " over range !!!";
+                }
+            } else {
+                rd = row_rowdata;
+            }
+            if (rd) {
+                if (colnames) {
+                    var ns = (colnames instanceof Array) ? colnames : colnames.toLowerCase().split(",");
+                    for (var i = 0; i < ns.length; i++) {
+                        rs[ns[i]] = rd[ns[i]];
+                    }
+                } else {
+                    rs.__rowid = rd.__rowid;
+                    rs.__rownum = rd.__rownum;
+                    rs.__status = rd.__status;
+                    rs.__status2 = rd.__status2;
+                    for (var j = 0; j < this.columns.length; j++) {
+                        rs[this.columns[j].name] = rd.__data[j];
+                    }
+                }
+            }
+            if (hasvar) {
+                $e.fn.extend(this.vars, rs);
+            }
+            return rs;
+        },
+        /**
          * 修改主缓存区的数据值
          *
          * @param row
@@ -619,13 +633,11 @@ var ado_status = {
                 }
                 if (c1 > 0) {
                     c1 += (b1 ? 1 : 0);
-                    var eo = this.buildEventObject(ado_status.ROW_EDIT, row,
-                        this.getRowID(row), c1 > 1 ? -2 : chgCol);
+                    var eo = this.buildEventObject(ado_status.ROW_EDIT, row, this.getRowID(row), c1 > 1 ? -2 : chgCol);
                     this.doDataListen(eo);
                 }
             }
         },
-
         /**
          * 设置数据对象变量
          *
@@ -640,28 +652,23 @@ var ado_status = {
                 this.doVarChangedListen(name, value, oldvalue, false);
             }
         },
-
         getVar: function (name) {
             return this.vars[name];
         },
-
+        getVars: function () {
+            return this.vars;
+        },
         removeVar: function (name) {
-            var v1 = this.vars[name];
+        	var v1=this.vars[name];
             delete this.vars[name];
             return v1;
         },
-
         doVarChangedListen: function (name, value, oldvalue, only) {
-            var ls = this.varListen[name];
-            if (ls) {
-                var p = [{
-                    name: name,
-                    value: value,
-                    oldValue: oldvalue,
-                    ado: this
-                }];
-                ls.done(p);
-            }
+        	var arg = [{name:name, value:value, oldvalue:oldvalue}];
+            var ec=this.varListen[name];
+            if (ec){
+            	ec.done.apply(ec,arg);
+            }       
         },
 
         /**
@@ -674,18 +681,15 @@ var ado_status = {
             }
             return ls.add(eventobj);
         },
-
         removeVarChangedListen: function (name, handle) {
             var ls = this.varListen[name];
             if (ls) {
                 ls.remove(handle);
             }
         },
-
         setEdit: function (edit) {
             this.isEdit = edit;
         },
-
         /**
          * 设置刷新状态,ok
          *
@@ -717,8 +721,7 @@ var ado_status = {
             };
             if ((status == ado_status.REFRESH) || (row < 0)) {
                 eo.row = eo.rowid = eo.columnIndex = -1;
-            } else if (status != ado_status.REFRESH && row >= 0
-                && row < this.getRowsCount()) {
+            } else if (status != ado_status.REFRESH && row >= 0 && row < this.getRowsCount()) {
                 eo.rowData = this.getRowData(row);
                 if (eo.rowData != null && eo.rowData.__rowid != rowid) {
                     eo.rowData = null;
@@ -739,15 +742,18 @@ var ado_status = {
          *            对指定行进行范围验证，确定是否包含在内
          * @returns
          */
-        sum: function (name_index, prec, func) {
-            var col = isNaN(name_index) ? this.getColumnIndex(name_index)
-                : (name_index - 0);
-            var v = 0;
-            if (col >= 0) {
-                var v1;
+        sum: function (col_method, prec) {
+            var v=0.0,v1;
+            if ((typeof col_method)=='function'){
                 var p = [this];
                 for (var i = 0; i < this.rows.length; i++) {
-                    if (!func || func.apply(this.rows[i], p)) {
+                    v1 = col_method.apply(this.rows[i], p);
+                    v += ((v1 || 0) - 0);
+                }
+            }else {
+                var col = isNaN(col_method) ? this.getColumnIndex(col_method) : col_method - 0;
+                if (col >= 0) {
+                    for (var i = 0; i < this.rows.length; i++) {
                         v1 = this.rows[i].__data[col];
                         v += ((v1 || 0) - 0);
                     }
@@ -764,9 +770,9 @@ var ado_status = {
          */
         getColumnIndex: function (colname) {
             if (colname) {
-                if (colname == "$row") {// 从1开始的行号,__rownum从0开始
+                if (colname == "$row") {//从1开始的行号,__rownum从0开始
                     return -100;
-                } else if (colname == "__rowid") {// __rowid是虚拟的列
+                } else if (colname == "__rowid") {//__rowid是虚拟的列
                     return -101;
                 } else {
                     var i = this.colsIndex[colname.toLowerCase()];
@@ -775,10 +781,8 @@ var ado_status = {
             }
             return -1;
         },
-
         getColumnName: function (index) {
-            return this.columns.rangeCheck(index) ? this.columns[index].name
-                : null;
+            return this.columns.rangeCheck(index) ? this.columns[index].name : null;
         },
 
         /**
@@ -941,6 +945,7 @@ var ado_status = {
             var prop = null;
             if (this.editCols.length > 0) {
                 prop = {
+                    //type : "sync",
                     convert: "1"
                 };
                 // 修改状态值为sync，
@@ -1000,38 +1005,35 @@ var ado_status = {
             if (events) {
                 es = events[ado_status.REFRESH];
                 if (es) {
-                    for (var i = 0; i < es.length; i++) {
+                    for ( var i = 0; i < es.length; i++) {
                         this.doDataListen(es[i]);
                     }
                     this.delayVar = null;
                 } else {
                     es = (events[ado_status.ROW_DELETE] || []);
                     if (es) {
-                        for (var i = 0; i < es.length; i++) {
+                        for ( var i = 0; i < es.length; i++) {
                             this.doDataListen(es[i]);
                         }
                     }
                     es = (events[ado_status.ROW_EDIT] || [])
                         .concat((events[ado_status.ROW_ADD] || []));
-                    for (var i = 0; i < es.length; i++) {
+                    for ( var i = 0; i < es.length; i++) {
                         es[i].row = this.findRowByRowID(es[i].rowid);
                         this.doDataListen(es[i]);
-
                     }
                 }
-            }
-            if (!events && this.delayVar) {
-                this.doDataListen(this.buildEventObject(ado_status.EVENT_ALL, -1));
+            }else if (this.delayVar){
+                this.doDataListen(this.buildEventObject(ado_status.EVENT_ALL,-1));
             }
             this.delayEvents = null;
             if (this.delayVar) {
                 var vs;
-                for (var i = 0; i < this.delayVar.length; i++) {
+                for ( var i = 0; i < this.delayVar.length; i++) {
                     vs = this.delayVar[i];
-                    this.doVarChangedListen(vs.name, vs.value, vs.oldValue,
-                        true);
+                    this.doVarChangedListen(vs.name, vs.value, vs.oldValue,true);
                 }
-                this.doVarChangedListen(ado_status.EVENT_ALL, "", "", true);
+                //this.doVarChangedListen(ado_status.EVENT_ALL, "", "", true);
                 this.delayVar = null;
             }
             this.isInited = true;
@@ -1131,8 +1133,10 @@ var ado_status = {
             if ((arguments.length == 0) || (exp_func == null)
                 || (exp_func === '') || (exp_func === true)) {
                 exp_func = true;
+            } else if (typeof exp_func == 'string') {
+                exp_func = createDirectFunc(exp_func);
             }
-            if (typeof exp_func == 'function') {
+            if ((typeof exp_func) == 'function') {
                 var all = this.rows.concat(this.frows);
                 var data = [], fdata = [];
                 var p = [this];
@@ -1172,7 +1176,6 @@ var ado_status = {
             }
             return false;
         },
-
         nextPage: function (options) {
             var pg = this.getDataPage();
             if (pg.getCurrentPage() < pg.getPageCount() - 1) {
@@ -1180,7 +1183,6 @@ var ado_status = {
             }
             return false;
         },
-
         release: function () {
             if (this.listen) {
                 this.listen.release();
@@ -1198,7 +1200,6 @@ var ado_status = {
             this.dataPage.release();
             this.dataPage = null;
         },
-
         toString: function () {
             return this.name;
         }
@@ -1220,9 +1221,8 @@ var ado_status = {
     }
 
     RowData.prototype = {
-        __rownum: -1,// 行序号，在只有一页数据时与__row相同，都从0开始；
-        __row: -1
-        // 不管数据处在第几页，总是从0开始，$是从1开始的行号，等于__rownum+1
+        __rownum: -1,//行序号，在只有一页数据时与__row相同，都从0开始；
+        __row: -1 //不管数据处在第几页，总是从0开始，$是从1开始的行号，等于__rownum+1
     };
 
     // 该类定义一列的属性（列名/name，类型/type，默认值/defa）
@@ -1247,12 +1247,11 @@ var ado_status = {
         pageRows: 0,
         currentPage: 0,
         refreshRows: 0,
-        changePage: function (_page, _pages) {
-            _page = _page <= 0 ? 0 : _page;
-            this.currentPage = _page;
-            this.pages = _pages;
+        changePage: function (page, pages) {
+            page = page <= 0 ? 0 : page;
+            this.currentPage = page;
+            this.pages = pages;
         },
-
         getPageRows: function () {
             return this.pageRows;
         },
@@ -1270,34 +1269,27 @@ var ado_status = {
             }
             return num;
         },
-
         getRealRow: function (row) {
             var num;
-            if (this.ado.pageLoadReset || this.currentPage <= 0
-                || row < this.pageRows || this.pageRows <= 0) {
+            if (this.ado.pageLoadReset || this.currentPage <= 0 || row < this.pageRows || this.pageRows <= 0) {
                 num = row;
             } else {
                 num = row % this.pageRows;
             }
             return num;
         },
-
         getPageCount: function () {
             return this.pages;
         },
-
         getCurrentPage: function () {
             return this.currentPage;
         },
-
         getRefreshRows: function () {
             return this.refreshRows;
         },
-
         hasNextPage: function () {
             return this.pages > 1 && (this.currentPage < this.pages - 1);
         },
-
         release: function () {
             this.ado = null;
         }
@@ -1305,25 +1297,35 @@ var ado_status = {
 
     function watchData(rowdata, name) {
         if (!(name in rowdata) && (name in rowdata.__cols) || name == '$row') {
+
             Object.defineProperty(rowdata, name, {
-                // enumerable : true,
+                //enumerable : true,
                 configurable: true,
                 get: function () {
-                    return (name == "$row") ? (this.__rownum + 1)
-                        : this.__data[this.__cols[name]];
+                    return (name == "$row") ? (this.__rownum + 1) : this.__data[this.__cols[name]];
                 },
                 set: function (val) {
                     // 不建议使用
-                    // var col = this.__cols[name.toLowerCase()];
-                    // if (col === 0 || col) {
-                    // this.__data[col] = val;
-                    // }
+//					var col = this.__cols[name.toLowerCase()];
+//					if (col === 0 || col) {
+//						this.__data[col] = val;
+//					}
                 }
             });
-
         }
+    }
+
+    function createDirectFunc(exp) {
+        if (typeof exp != 'function') {
+            if (exp.indexOf('return') < 0) {
+                exp = "return (" + exp + ")";
+            }
+            return new Function("with(this){" + exp + "}");
+        }
+        return exp;
     }
 
     $e.fn.extend($e.ModuleCell, ADOAgent.prototype);
     $e.ADOAgent = ADOAgent;
 }($e);
+//

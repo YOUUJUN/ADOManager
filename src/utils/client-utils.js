@@ -1,3 +1,4 @@
+// JavaScript Document
 /**
  * Created by yong on 2016/1/5 0005.
  */
@@ -9,16 +10,32 @@ if (!String.prototype.trim) {
 }
 if (!String.prototype.trimLeft) {
     String.prototype.trimLeft = function () {
-        return this.replace(/^\s+/g, '');
+        var i = 0;
+        while (i < this.length) {
+            if (this[i] != ' ') {
+                return this.substring(i);
+            }
+            i++;
+        }
+        return '';
     };
 }
 
 if (!String.prototype.trimRight) {
     String.prototype.trimRight = function () {
-        return this.replace(/\s+$/g, '');
+        var i = this.length - 1;
+        while (i >= 0) {
+            if (this[i] != ' ') {
+                return this.substring(0, i + 1);
+            }
+            i++;
+        }
+        return '';
     };
 }
 
+//为什么必须在空字符串后面添加呢，
+//可以是padEnd方法来替换
 if (!String.prototype.fillText) {
     String.prototype.fillText = function (n) {
         var s1 = this;
@@ -28,6 +45,23 @@ if (!String.prototype.fillText) {
         return s1;
     };
 }
+//JS 使用UCS-2存储，所有的都是占两个字节的，该方法只能是判断是否是ASCII 编码
+//解释：http://www.ruanyifeng.com/blog/2014/12/unicode.html
+
+// if (!String.prototype.getTextByCharLen) {
+//     String.prototype.getTextByCharLen = function (len, doublechar) {
+//         if (len > 0 && !!doublechar) {
+//             var count = 0;
+//             for (var i = 0; i < this.length; i++) {
+//                 count += (this.charCodeAt(i) > 255 ? 2 : 1);
+//                 if (count > len) {
+//                     return this.substring(0, i);
+//                 }
+//             }
+//         }
+//         return this;
+//     };
+// }
 
 if (!String.prototype.startsWith) {
     String.prototype.startsWith = function (str) {
@@ -60,6 +94,9 @@ if (!String.prototype.endsWith) {
     };
 }
 
+/**
+
+ */
 if (!Array.prototype.exchange) {
     Array.prototype.exchange = function (x, y) {
         var a = this[x];
@@ -122,7 +159,24 @@ if (!Array.prototype.rangeCheck) {
         return false;
     };
 }
-
+/**
+ *
+ * @param key
+ * 将数组元素的每个类型为plainObject的元素键值转为小写
+ */
+if (!Array.prototype.elementToLowerCase) {
+    Array.prototype.elementToLowerCase = function (key) {
+        for (var i = 0; i < this.length; i++) {
+            if (key) {
+                if (this[i] && this[i][key]) {
+                    this[i][key] = (this[i][key] + '').toLowerCase();
+                }
+            } else if ((typeof this[i]) == 'string') {
+                this[i] = this[i].toLowerCase();
+            }
+        }
+    };
+}
 /**
  * 返回移到指定行的index
  */
@@ -135,6 +189,9 @@ if (!Array.prototype.move) {
                 if (to < 0) {
                     this.push(v1);
                     return this.length - 1;
+                    // } else if (from<to){
+                    //     this.splice(to, 0, v1);
+                    //     return to;
                 } else {
                     this.splice(to, 0, v1);
                     return to;
@@ -174,6 +231,7 @@ if (!Array.prototype.move) {
 
 
 var $e = $e || {};
+//var ee=$e;
 +function ($e) {
     $e.os = {
         ie: (!!window.ActiveXObject || "ActiveXObject" in window),
@@ -201,15 +259,17 @@ var $e = $e || {};
             return eventobj.handle;
         },
         done: function () {
-            var arg1, cell;
+            var arg1, cell,r1=true;
             var arg = [].slice.apply(arguments);
             for (var i in this._evts) {
                 cell = this._evts[i];
                 arg1 = arg.concat(cell.args || []);
-                if (cell.method.apply(cell.context, arg1) === false) {
+                r1=cell.method.apply(cell.context, arg1);
+                if (r1 === false) {
                     break;
                 }
             }
+            return r1;
         },
 
         /**
@@ -274,10 +334,13 @@ var $e = $e || {};
                 return eventobj;
             }
         },
-
+        // regBindEvent: function (obj, eventtype,context,method) {
+        //     var m1=this.bindAsEventListener(context,method,[].slice.call(arguments,4));
+        //     return this.regEvent(obj,eventtype,context,m1);
+        // },
         call: function (obj) {
             var arg = [].slice.apply(arguments, [1]) || [];
-            if ((typeof obj) == 'function') {
+            if ((typeof  obj) == 'function') {
                 obj.apply($e, arg);
             } else {
                 arg = arg.concat(obj.args || []);
@@ -408,6 +471,12 @@ var $e = $e || {};
         nextIndex: function () {//modal
             return ++this._maxIndex;//+(modal?this._basicIndex:0);
         },
+        // getBody:function(){
+        //     return document.body || document.documentElement;
+        // },
+        getScrollBody: function () {
+            return (document.body.scrollTop || document.body.scrollLeft) ? document.body : document.documentElement;
+        },
         getInt: function (s, defa) {
             s = parseInt(s);
             s = isNaN(s) ? (arguments.length > 1 ? defa : 0) : s;
@@ -418,14 +487,13 @@ var $e = $e || {};
             s = isNaN(s) ? (arguments.length > 1 ? defa : 0.0) : s;
             return s;
         },
-
+        //为什么只有'1'， 返回true，
         getBoolean: function (s1, defa) {
             if (s1 == null || s1 == undefined) {
                 s1 = (defa == null || defa == undefined) ? false : defa;
             }
             return ((s1 == 1) || (s1 == '1') || (s1 == 'true') || (s1 === true)) ? true : false;
         },
-
         /**
          * 统计text包含的c1个数
          * @param text
@@ -466,7 +534,7 @@ var $e = $e || {};
                     case 'decimal':
                     case 'number':
                         if (typeof value == 'string') {
-                            value = value = value.replace(/,/g, "");
+                            value = value.replace(/,/g, "");
                         }
                         if (isNaN(value)) {
                             value = null;
@@ -484,7 +552,21 @@ var $e = $e || {};
                             if (typeof value == 'number' || !isNaN(value)) {
                                 value = new Date(parseFloat(value));
                             } else {
+                                var mils=0;
+                                if (typeof(value)=='string'){
+                                    var p=value.indexOf('.');
+                                    if (p>0){
+                                        mils=parseInt(value.substring(p+1));
+                                        value=value.substring(0,p);
+                                    }
+                                    if (value.indexOf('-')>0){
+                                        value=value.replace(new RegExp(/-/gm) ,"/");
+                                    }
+                                }
                                 value = new Date(value);
+                                if (mils>0){
+                                    value.setMilliseconds(mils);
+                                }
                             }
                         }
                         if (value && (type == "date")) {
@@ -552,11 +634,9 @@ var $e = $e || {};
             }
             return false;
         },
-
         plainobj: {
             string: {}.hasOwnProperty.toString.call(Object)
         },
-
         isPlainObject: function (obj) {
             if (!obj || {}.toString.call(obj) !== "[object Object]") {
                 return false;
@@ -570,24 +650,20 @@ var $e = $e || {};
             }
             return false;
         },
-
         clearObject: function (obj) {
             for (var i in obj) {
                 delete obj[i];
             }
         },
-
         // js获取url传递参数，js获取url？号后面的参数window.location
         getQueryParameter: function (name) {
             var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
             var r = window.location.search.substr(1).match(reg);
             return r ? decodeURIComponent(r[2]) : '';//unescape(r[2]) : '';
         },
-
         getE: function (id) {
             return document.getElementById(id);
         },
-
         isEmptyObject: function (e) {
             for (var t in e)
                 return false;
@@ -615,94 +691,112 @@ var $e = $e || {};
             return c1;
         },
 
+        /**
+         * @version 3.1 增加了参数isdeeep,表示是否深度继承
+         */
         extend: function (source, target, overwrite,isdeep) {
             if (source && target) {
                 overwrite = !!overwrite;
                 for (var f in source) {
                     //目标对象没有该属性，或overwrite为true
                     if ((target[f] == undefined)) {
-                        if (this.isPlainObject(source[f])){
-                            target[f]={};
-                            this.extend(source[f],target[f],overwrite,isdeep);
-                        }else{
-                            target[f] = source[f];
-                        }
+                    	if (this.isPlainObject(source[f])){
+                    		target[f]={};
+                    		this.extend(source[f],target[f],overwrite,isdeep);
+                    	}else{
+                    		target[f] = source[f];
+                    	}
                     }else if (isdeep){
-                        if (this.isPlainObject(source[f])){
-                            if (target[f]==null || !this.isPlainObject(target[f])){
-                                target[f]={};
-                            }
-                            this.extend(source[f],target[f],overwrite,isdeep);
-                        }else if (overwrite){
-                            target[f] = source[f];
-                        }
+                    	if (this.isPlainObject(source[f])){
+                    		if (target[f]==null || !this.isPlainObject(target[f])){
+                    			target[f]={};
+                    		}
+                    		this.extend(source[f],target[f],overwrite,isdeep);
+                    	}else if (overwrite){
+                    		target[f] = source[f];
+                    	}
                     }else if (overwrite){
-                        target[f] = source[f];
+                    	target[f] = source[f];
                     }
                 }
             }
             return target;
+        },
+        /**
+         * 根据字符串创建对象
+         * @param s
+         * @returns {*}
+         */
+        createObject: function (s) {
+            if (s) {
+                if (this.isPlainObject(s)) {
+                    return s;
+                } else if ((typeof s) == 'string') {
+                    var i = 0;
+                    while (i < s.length && s.charAt(i) <= ' ') {
+                        i++;
+                    }
+                    if (i > 0) {
+                        s = s.substring(i);
+                    }
+                    if (s.startsWith("{") && !s.startsWith('return')) {
+                        s = "return " + s;
+                    }
+                    var obj = {};
+                    if (s.startsWith("return")) {
+                        try {
+                            var f = new Function(s);
+                            obj = f();
+                        } catch (err) {
+                            throw err + "\n" + s;
+                        }
+                    }
+                    return obj;
+                }
+            }
+            return {};
         },
 
         /**
          * 查询满足条件的第一个父节点
          */
         closest: function (node, method, includecurrent) {
-
-            var end, r, result = null;
-
             if (node) {
-                //
                 node = node.target || node.srcElement || node;
-
-                if (includecurrent) { //包含当前元素
-
+                var e1, r;
+                if (includecurrent) {
                     r = this.test(node, method);
-                    //r执行查找结果，及查找元素的属性，
-
                     if (r === 1 || r === true) {
                         return node;
-
                     } else if (r === -1) {
                         return null;
-
                     } else if (method['end']) {
-                        end = method['end'];
-
+                        e1 = method['end'];
                         //是截至的节点，或tagName为该值、或节点就有end的变量属性
-                        if ((end == node) || (end == node.tagName) || (node[end] !== undefined)) {
+                        if ((e1 == node) || (e1 == node.tagName) || (node[e1] !== undefined)) {
                             return null;
                         }
                     }
                 }
-
-                //得到父节点
                 node = node.parentNode;
-
                 while (node) {
-
                     r = this.test(node, method);
-
                     if (r === true || r === 1) {
-                        result = node;
-                        break;
+                        return node;
                     } else if (r == -1) {
                         //停止搜索
-                        result = null;
                         break;
                     } else if (method['end']) {
-                        end = method['end'];
+                        e1 = method['end'];
                         //是截至的节点，或tagName为该值、或节点就有end的变量属性
-                        if ((end == node) || (end == node.tagName) || (node[end] !== undefined)) {
-                            result = null;
+                        if ((e1 == node) || (e1 == node.tagName) || (node[e1] !== undefined)) {
                             break;
                         }
                     }
-                    //继续循环父节点
                     node = node.parentNode;
                 }
             }
-            return result;
+            return null;
         },
 
         isParent: function (child, parent) {
@@ -713,36 +807,205 @@ var $e = $e || {};
         },
 
         queryOwner: function (node, notview) {
-
             var shell = this.closest(node, '$owner', true);
-
             var r = shell ? shell['$owner'] : null;
-
-            //过滤掉view类型
             if (r && notview && (r['_owner_type'] == "view")) {
                 return null;
             }
             return r;
         },
-
         queryOwnerView: function (node) {
-            node = node.target || node.srcElement || node;
-            while (node && node != window) {
-                if (node['$owner']) {
-                    return node['$owner'];
+            var shell = this.closest(node['shell'] || node, function (n1) {
+                if (n1['$owner'] && (n1['$owner']['_owner_type'] == 'view')) {
+                    return 1;
                 }
-                node = node.parentNode;
-            }
-            return null;
+            }, true);
+            return shell ? shell['$owner'] : null;
         },
+
+        /**
+         * 移除指定shell的所有子节点,设置为child
+         *
+         * @param parent
+         * @param child
+         */
         setChild: function (parent, child) {
             if (!!parent) {
                 while (parent.lastChild) {
                     parent.removeChild(parent.lastChild);
                 }
                 if (child) {
-                    parent.appendChild(child);
+                    this.addChild(parent, child);
                 }
+            }
+        },
+        /**
+         * 为指定shell添加child
+         *
+         * @param parent
+         * @param child
+         */
+        addChild: function (parent, child) {
+            if (parent && child) {
+                parent.appendChild(child);
+            }
+        },
+
+        /**
+         * 获取元素所在的绝对位置(在元素ref中，从border开始)
+         * @param shell
+         * @returns {*}
+         */
+        getLocation: function (shell, root) {
+            if (shell) {
+                var top = shell.offsetTop;
+                var left = shell.offsetLeft;
+                var elem = shell;
+                var st, b = false;
+                var gi = $e.fn.getFloat;
+                while (elem.offsetParent) {
+                    elem = elem.offsetParent;
+                    top += elem.offsetTop;
+                    left += elem.offsetLeft;
+                    //st = $e.fn.getStyle(elem);
+                    // if (st['position'] == 'fixed') {
+                    //     var body=$e.fn.getBody();
+                    //     left += body.scrollLeft;
+                    //     top += body.scrollTop;
+                    //     break;
+                    // }
+                    if (elem.tagName == 'BODY') {
+                        if (!!root) {
+                            left -= document.documentElement.scrollLeft || document.body.scrollLeft;
+                            top -= document.documentElement.scrollTop || document.body.scrollTop
+                        }
+                        break;
+                    }
+                    // if (elem.offsetParent!=elem.parentNode) {
+                    left -= gi(elem.parentNode.scrollLeft, 0);
+                    top -= gi(elem.parentNode.scrollTop, 0);
+                    // }
+                    // if (elem.offsetParent!=elem.parentNode) {
+                    //     left -= gi(elem.scrollLeft, 0);
+                    //     top -= gi(elem.scrollTop, 0);
+                    // }
+                }
+                st = $e.fn.getStyle(shell);
+                var tmp = {
+                    top: top,// - gi(st.marginTop, 0) - gi(st.boderTop, 0),
+                    left: left,// - gi(st.marginLeft, 0) - gi(st.boderLeft, 0),
+                    width: shell.offsetWidth,
+                    height: shell.offsetHeight,
+                    zIndex: st.zIndex || 0
+                };
+                return tmp;
+            }
+            return null;
+        },
+        getRelativeOffset: function (e, node) {
+            var left = e.pageX || (e.clientX + document.body.scrollLeft);
+            var top = e.pageY || (e.clientY + document.body.scrollTop);
+            if (node) {
+                var pos = this.getLocation(node);
+                left -= pos.left;
+                top -= pos.top;
+            }
+            return {
+                offsetX: left,
+                offsetY: top
+            };
+        },
+        realSize: function (node, onlystyle) {
+            if (node) {
+                var st = $e.fn.getStyle(node);
+                var gi = $e.fn.getFloat;
+                var w, h, wo, ho;
+                wo = !((st.width + '').endsWith('px') || onlystyle);
+                ho = !((st.height + '').endsWith('px') || onlystyle);
+                w = wo ? node.offsetWidth : gi(st.width);
+                h = ho ? node.offsetHeight : gi(st.height);
+                // var w = ((st.width + '').endsWith('px') || onlystyle) ? gi(st.width) : node.offsetWidth;
+                // var h = ((st.height + '').endsWith('px') || onlystyle)? gi(st.height) : node.offsetHeight;
+                var s = {
+                    blankWidth: gi(st.paddingLeft, 0) + gi(st.borderLeftWidth, 0) + gi(st.paddingRight, 0) + gi(st.borderRightWidth, 0),
+                    blankHeight: gi(st.paddingTop, 0) + gi(st.borderTopWidth, 0) + gi(st.paddingBottom, 0) + gi(st.borderBottomWidth, 0),
+                    marginWidth: gi(st.marginLeft, 0) + gi(st.marginRight, 0),
+                    marginHeight: gi(st.marginTop, 0) + gi(st.marginBottom, 0),
+                    marginTop: gi(st.marginTop, 0),
+                    marginBottom: gi(st.marginBottom, 0)
+                };
+                s.width = w - s.blankWidth;
+                s.height = h - s.blankHeight;
+                return s;
+            }
+            return null;
+        },
+        /**
+         *
+         * @param shell
+         * @param isshow
+         * @param option {side:left/down/right/top/center,ref:element,move:{top:10,left:10}}
+         */
+        showElement: function (shell, isshow, option) {
+            var shell = shell['shell'] || shell;
+            if (isshow) {
+                this.removeClass(shell, 'hide');
+                if (option) {
+                    var side = option['side'];
+                    var ref = option['ref'];
+                    var top = -1000, left = -1000;
+                    var fi = $e.fn.getInt;
+                    if (side == 'point') {
+                        top = option.top;
+                        left = option.left;
+                    } else if (ref) {
+                        var rs = this.getLocation(ref, $e.fn.getStyle(shell)['position'] == 'fixed');
+                        if (side == 'top') {
+                            left = rs.left;
+                            top = rs.top - shell.offsetHeight;
+                            left=left<0?0:left;
+                            top=top<0?0:top;
+                        } else if (side == 'down') {
+                            left = rs.left;
+                            top = rs.top + rs.height;
+                            if (top+shell.offsetHeight>document.body.clientHeight){
+                                top = rs.top - shell.offsetHeight-4;
+                                left=left<0?0:left;
+                                top=top<0?0:top;
+                            }
+                        } else if (side == 'left') {
+                            top = rs.top;
+                            left = rs.left - shell.offsetWidth;
+                        } else if (side == 'right') {
+                            top = rs.top;
+                            left = rs.left + rs.width;
+                        } else {
+                            //center
+                            left = rs.left + parseInt((rs.width - shell.offsetWidth) / 2);
+                            top = rs.top + parseInt((rs.height - shell.offsetHeight) / 2);
+                        }
+                    } else if (side == 'center' || !side) {
+                        var body = document.body;
+                        var st0 = $e.fn.getStyle(shell);
+                        var w1 = (st0.width == 'auto' || st0.width == '' || (st0.width + '').endsWith("%")) ? shell.offsetWidth : st0.width;
+                        var h1 = (st0.height == 'auto' || st0.height == '' || (st0.height + '').endsWith("%")) ? shell.offsetHeight : st0.height;
+                        left = parseInt((body.clientWidth - fi(w1, 0)) / 2);
+                        top = parseInt((body.clientHeight - fi(h1, 0)) / 2);
+                        left = (left < 0 ? 0 : left) + fi(body.scrollLeft || window.scrollX);
+                        top = (top < 0 ? 0 : top) + fi(body.scrollTop || window.scrollY);
+                    }
+                    if (option['move']) {
+                        top += option.move.top || 0;
+                        left += option.move.left || 0;
+                    }
+                    if (!option['deviating']) {
+                        left = left < 0 ? 0 : left;
+                        top = top < 0 ? 0 : top;
+                    }
+                    this.setStyle(shell, "top:" + top + "px;left:" + left + "px");
+                }
+            } else {
+                this.addClass(shell, 'hide');
             }
         },
 
@@ -790,6 +1053,63 @@ var $e = $e || {};
             }
         },
 
+        regMenu: function (menu) {
+            this.showMenu(menu);
+        },
+
+        /**
+         *
+         * @param menu {shell:element,locate:"",reference:view,flash:"",level:0}
+         */
+        showMenu: function (menu) {
+            var level = menu['level'] || 0;
+            this.hideMenu(level);
+            this.showElement(menu['shell'], true, menu);
+            this._menu.push(menu);
+        },
+
+        hideMenu: function (level) {
+            level = !isNaN(level) ? level : 0;
+            var m1;
+            while (this._menu.length > level) {
+                m1 = this._menu.pop();
+                this.showElement(m1['shell'], false);
+            }
+        },
+        syncMovingMenu: function () {
+            if (this._menu.length > 0) {
+                var menu;
+                for (var i = 0; i < this._menu.length; i++) {
+                    menu = this._menu[i];
+                    if (this.isElementShow(menu['shell'])) {
+                        $e.fn.showElement(menu['shell'], true, menu);
+                    }
+                }
+            }
+        },
+        bindMovingMenu: function (view) {
+            var shell = view.getShell();
+            var s = shell.querySelectorAll('[scrollmenu="1"]');
+            if (s && s.length > 0) {
+                for (var i = 0; i < s.length; i++) {
+                    view.bindListen($e.events.regEvent(s[i], 'scroll', $e.fn, $e.fn.syncMovingMenu));
+                    s[i].setAttribute("scrollmenu", "0");
+                }
+            }
+        },
+
+        /**
+         *
+         * @param title
+         * @param msg
+         * @param option {type:info,error,warn,question,context:xxx,button:[{name:yes,text:确认,method:function(){}],[yes,no],[yes,cancel],[yes,no,cancel],method:{}}
+         */
+        // showMessage: function (text, options) {
+        //     options = options ? options : {};
+        //     options.text = text;
+        //     var msg = this.message(options && options['isnew']);
+        //     msg.show(text, options);
+        // },
 
         /**
          * 解决IE和FF获取对象当前属性的hack，实现统一，
@@ -843,7 +1163,11 @@ var $e = $e || {};
          * @returns {*}
          */
         hasClass: function (elem, cls) {
+            // if (elem.classList) {
+            //     return elem.classList.contains(cls);
+            // } else {
             return new RegExp('(^| )' + cls + '( |$)', 'gi').test(elem.className);
+            // }
         }
         ,
 
@@ -854,11 +1178,17 @@ var $e = $e || {};
          * @param cls
          */
         addClass: function (elem, cls) {
-            if (elem.classList) {
-                elem.classList.add(cls);
-            } else {
-                if (!new RegExp('(^| )' + cls + '( |$)', 'gi').test(elem.className)) {
-                    elem.className += ' ' + cls;
+            var cs=cls?cls.split(" "):[];
+            for (var i=0;i<cs.length;i++) {
+                cls=cs[i];
+                if (cls) {
+                    if (elem.classList) {
+                        elem.classList.add(cls);
+                    } else {
+                        if (!new RegExp('(^| )' + cls + '( |$)', 'gi').test(elem.className)) {
+                            elem.className += ' ' + cls;
+                        }
+                    }
                 }
             }
         }
@@ -873,7 +1203,8 @@ var $e = $e || {};
         removeClass: function (elem, cls) {
             if (elem.classList) {
                 elem.classList.remove(cls);
-            } else {
+            }
+            else {
                 if (!elem.className) {
                     elem.className = '';
                 }
@@ -901,7 +1232,8 @@ var $e = $e || {};
                 }
                 if (existingIndex >= 0) {
                     classes.splice(existingIndex, 1);
-                } else {
+                }
+                else {
                     classes.push(cls);
                 }
                 elem.className = classes.join(' ');
@@ -921,9 +1253,110 @@ var $e = $e || {};
                 }
                 head.appendChild(node);
             }
+        },
+
+
+
+
+        /*---防抖与节流---*/
+        /*
+        * 防止指定函数多次调用。当一直触发指定函数时，触发间隔小于指定时间，
+        * 防抖方法下调用一次;
+        * 节流方法下每隔一定时间调用一次;
+        */
+
+        /*---防抖(debounce)---*/
+        /**
+         *
+         * 所谓防抖，就是指触发事件后在 n 秒内函数只能执行一次，如果在 n 秒内又触发了事件，则会重新计算函数执行时间。
+         *
+         * params :
+         *
+         *func : 需要进行防抖处理的函数；
+         * wait : 指定时间间隔；
+         *immediate : 指定是否立即执行函数
+         *
+         * */
+
+        debunce: function (func, wait, immediate) {
+            var timeout;
+
+            if (immediate === undefined) {
+                immediate = true;
+            }
+
+            return function () {
+                var context = this;
+                var args = arguments;
+
+                if (timeout) {
+                    clearTimeout(timeout);
+                }
+
+                if (immediate) {
+                    var callNow = !timeout;
+                    timeout = setTimeout(function () {
+                        timeout = null;
+                    }, wait);
+
+                    if (callNow) {
+                        func.apply(context, args);
+                    }
+                } else {
+                    timeout = setTimeout(function () {
+                        func.apply(context, args);
+                    }, wait);
+                }
+            }
+        },
+
+        /*---节流(throttle)---*/
+        /**
+         *
+         * 所谓节流，就是指连续触发事件但是在 n 秒中只执行一次函数。
+         *
+         * params :
+         *
+         *func : 需要进行节流处理的函数；
+         * wait : 指定时间间隔；
+         *type : 1 表示时间戳版, 2 表示定时器版
+         *
+         * */
+
+        throttle: function (func, wait, type) {
+            type = type || 1;
+
+            // 使用 == 兼容字符串;
+            if (type == 1) {
+                var previous = 0;
+            } else if (type == 2) {
+                var timeout;
+            }
+
+            return function () {
+                var context = this;
+                var args = arguments;
+                if (type == 1) {
+                    var now = Date.now();
+
+                    if (now - previous > wait) {
+                        func.apply(context, args);
+                        previous = now;
+                    }
+                } else if (type == 2) {
+                    if (!timeout) {
+                        timeout = setTimeout(function () {
+                            timeout = null;
+                            func.apply(context, args);
+                        }, wait);
+                    }
+                }
+            }
         }
 
     };
+    $e.fn._hideHandel = $e.events.regEvent(document, 'click', $e.fn, $e.fn.hideMenu);
+    $e.fn._scrollHandel = $e.events.regEvent(document, 'scroll', $e.fn, $e.fn.syncMovingMenu);
     $e.fn.extend({
         type_D: "date",
         type_DT: "datetime",
@@ -938,7 +1371,9 @@ var $e = $e || {};
          */
         formatDate: function (date, ftext) {
             //TODO
-            date = $e.fn.parseValue(date, 'datetime');
+        	if(date && !(date instanceof Date)){
+        		date = $e.fn.parseValue(date, 'datetime');
+        	}
             if (date && date instanceof Date) {
                 ftext = ftext ? ftext : "yyyy-MM-dd HH:mm:ss";
                 var o = {
@@ -964,7 +1399,7 @@ var $e = $e || {};
                             .replace(
                                 RegExp.$1,
                                 RegExp.$1.length == 1 ? o[k]
-                                    : ((k.charAt(0) == 'ftext' ? "000"
+                                    : ((k.charAt(0) == 'f' ? "000"
                                     : "00") + o[k])
                                         .substr(("" + o[k]).length));
                     }
