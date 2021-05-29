@@ -87,7 +87,7 @@ const myAxios =  async (options = {}) => {
 };
 
 
-export default $axios;
+export default myAxios;
 
 
 
