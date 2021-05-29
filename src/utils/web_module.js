@@ -10,6 +10,27 @@ const errorCaptured = async (asyncFunc, ...params) =>{
     }
 };
 
+let request  = async () =>{
+    function foo(data) {
+        return data;
+    }
+
+    let result = await $axios({
+        transformResponse : [foo]
+    })
+
+    return result
+}
+
+
+request('Save').then(result =>{
+
+})
+
+
+
+
+
 
 const baseURL = "http://192.168.3.62:3001";
 
@@ -35,6 +56,7 @@ const $axios =  async (options = {}) => {
 
 
     let $axios = axios.create(options);
+
 
     // Add a request interceptor
     $axios.interceptors.request.use((config) =>{
@@ -79,7 +101,7 @@ const $axios =  async (options = {}) => {
     }
 
 
-    return res;
+    return [error,res];
 };
 
 

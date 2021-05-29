@@ -13,19 +13,15 @@
         this.rows = [];// 主缓存数据
         this.frows = [];// 过滤缓存的数据
         this.vars = {};// 数据对象变量
-        this.varListen = {};// 数据对象变量监听事件
         this.columns = [];// 所有的列定义,
         this.colsIndex = {};// 所有的列对应的序号,
         this.name = name;
-        this.listen = $e.events.createEventCell();// 所有注册的事件
-        this.eventObject = this.buildEventObject(ado_status.REFRESH);
     }
 
     ADOAgent.prototype = {
         dataPage: null,
         // 是否存在修改行为
         isEdit: false,
-        eventObject: null,
         editCols: null,// 可以修改的列序号
         // 监听数据变动事件
         // 使用的时候当做了数组，结果赋值的时候是null，
@@ -204,14 +200,6 @@
             this.buildRowNum();
         },
 
-        addDelayEvent: function (delayobj, event) {
-            var es = delayobj[event.eventType];
-            if (!es) {
-                es = delayobj[event.eventType] = [];
-            }
-            es.push(event);
-            delayobj['size']=(delayobj['size']||0)+1;
-        },
         /**
          * 插入一行,内部调用，没有触发任何状态改变和事件
          *
@@ -265,8 +253,6 @@
             var i = this.rows.move(from, to);
             if (i >= 0) {
                 this.buildRowNum();
-                var eo = this.buildEventObject(ado_status.REFRESH);
-                this.doDataListen(eo);
                 return to;
             }
             return -1;
@@ -296,12 +282,9 @@
             if (rowdata) {
                 if (!stop) {
                     // 触发delete事件
-                    var eo = this.buildEventObject(ado_status.ROW_DELETE, row, rowdata.__rowid, -1);
-                    eo.rowData = rowdata;
                     if (this.editCols.length > 0) {
                         this.isEdit = true;
                     }
-                    this.doDataListen(eo);
                 }
                 return true;
             }
@@ -426,19 +409,7 @@
             return this.rows[row].__status2;
         },
 
-        /**
-         * 在主数据缓存区根据id获取一行的属性
-         *
-         * @param rowid
-         *            数据行的rowid
-         * @param colsname
-         *            数组列名(如['name','age'])或用",'连接的字段名字符串(如'name,age')
-         * @returns
-         */
-        // getRowPropertiesById : function(rowid, colsname) {
-        // 	var r = this.findRowByRowID(rowid);
-        // 	return r >= 0 ? this.getRowProperties(r, colsname) : null;
-        // },
+
 
         /**
          * 获取行数据,一般只用于内部调用
@@ -545,7 +516,6 @@
                     value = $e.fn.parseValue(value, cln.dataType, cln.precision);
                 }
                 if (v1 !== value) {
-                    var rs = this.buildEventObject(ado_status.ROW_EDIT, row, rd.__rowid, col);
                     rs.rowData = rd;
                     rs.oldValue = v1;
                     rs.newValue = value;
@@ -558,10 +528,6 @@
                         rd.__cellStatus.push(col);
                     }
                     this.isEdit = true;
-                    this.eventObject = rs;
-                    if (!stope) {
-                        this.doDataListen(rs);
-                    }
                     return true;
                 }
                 return false;
@@ -633,8 +599,6 @@
                 }
                 if (c1 > 0) {
                     c1 += (b1 ? 1 : 0);
-                    var eo = this.buildEventObject(ado_status.ROW_EDIT, row, this.getRowID(row), c1 > 1 ? -2 : chgCol);
-                    this.doDataListen(eo);
                 }
             }
         },
@@ -646,11 +610,7 @@
          * @param value
          */
         setVar: function (name, value, stope) {
-            var oldvalue = this.vars[name] || null;
             this.vars[name] = value;
-            if (!stope) {
-                this.doVarChangedListen(name, value, oldvalue, false);
-            }
         },
         getVar: function (name) {
             return this.vars[name];
@@ -663,30 +623,7 @@
             delete this.vars[name];
             return v1;
         },
-        doVarChangedListen: function (name, value, oldvalue, only) {
-        	var arg = [{name:name, value:value, oldvalue:oldvalue}];
-            var ec=this.varListen[name];
-            if (ec){
-            	ec.done.apply(ec,arg);
-            }       
-        },
 
-        /**
-         * ls {source:source,func:func}
-         */
-        addVarChangedListen: function (name, eventobj) {
-            var ls = this.varListen[name];
-            if (!ls) {
-                this.varListen[name] = ls = $e.events.createEventCell();
-            }
-            return ls.add(eventobj);
-        },
-        removeVarChangedListen: function (name, handle) {
-            var ls = this.varListen[name];
-            if (ls) {
-                ls.remove(handle);
-            }
-        },
         setEdit: function (edit) {
             this.isEdit = edit;
         },
@@ -698,39 +635,6 @@
          */
         setLocked: function (b) {
             this.locked = !!b;
-        },
-
-        /**
-         * 改变数据对象的变动状态
-         *
-         * @param row
-         * @param rowid
-         * @param col
-         */
-        buildEventObject: function (status, row, rowid, col) {
-            var eo = {
-                eventType: status,
-                rowid: rowid,
-                row: row,
-                columnIndex: col,// -1表示没有列改变,-2表示多个列改变
-                columnName: '',// 正在改变的列
-                newValue: null,
-                oldValue: null,
-                rowData: null,
-                ado: this
-            };
-            if ((status == ado_status.REFRESH) || (row < 0)) {
-                eo.row = eo.rowid = eo.columnIndex = -1;
-            } else if (status != ado_status.REFRESH && row >= 0 && row < this.getRowsCount()) {
-                eo.rowData = this.getRowData(row);
-                if (eo.rowData != null && eo.rowData.__rowid != rowid) {
-                    eo.rowData = null;
-                }
-            }
-            if ((arguments.length >= 4) && (col >= 0)) {
-                eo.columnName = this.columns[col].name.toLowerCase();
-            }
-            return eo;
         },
 
         /**
@@ -885,10 +789,6 @@
             this.rows.length = 0;
             this.frows.length = 0;
             this.isEdit = false;
-            if (!stope) {
-                this.eventObject = this.buildEventObject(ado_status.REFRESH);
-                this.doDataListen(this.eventObject);
-            }
         },
 
         /**
@@ -985,78 +885,6 @@
         },
 
         /**
-         * 根据名称添加事件
-         *
-         * @param l，成员有{name,eventType,method:function,context}
-         */
-        addListen: function (listen) {
-            return this.listen.add(listen);
-        },
-
-        removeListen: function (handle) {
-            this.listen.remove(handle);
-        },
-
-        /**
-         * 延时执行数据变动事件，一般是从同步服务器端数据后开始执行
-         */
-        doDelayListen: function () {
-            var es, events = this.delayEvents;
-            if (events) {
-                es = events[ado_status.REFRESH];
-                if (es) {
-                    for ( var i = 0; i < es.length; i++) {
-                        this.doDataListen(es[i]);
-                    }
-                    this.delayVar = null;
-                } else {
-                    es = (events[ado_status.ROW_DELETE] || []);
-                    if (es) {
-                        for ( var i = 0; i < es.length; i++) {
-                            this.doDataListen(es[i]);
-                        }
-                    }
-                    es = (events[ado_status.ROW_EDIT] || [])
-                        .concat((events[ado_status.ROW_ADD] || []));
-                    for ( var i = 0; i < es.length; i++) {
-                        es[i].row = this.findRowByRowID(es[i].rowid);
-                        this.doDataListen(es[i]);
-                    }
-                }
-            }else if (this.delayVar){
-                this.doDataListen(this.buildEventObject(ado_status.EVENT_ALL,-1));
-            }
-            this.delayEvents = null;
-            if (this.delayVar) {
-                var vs;
-                for ( var i = 0; i < this.delayVar.length; i++) {
-                    vs = this.delayVar[i];
-                    this.doVarChangedListen(vs.name, vs.value, vs.oldValue,true);
-                }
-                //this.doVarChangedListen(ado_status.EVENT_ALL, "", "", true);
-                this.delayVar = null;
-            }
-            this.isInited = true;
-        },
-
-        /**
-         * 执行数据变动事件
-         *
-         * @param type
-         */
-        doDataListen: function (event_object) {
-            event_object = event_object || this.eventObject;
-            this.eventObject = event_object;
-            if (!this.locked) {
-                if ((event_object.row || 0) >= 0) {
-                    this.isEdit = (this.editCols.length > 0);
-                }
-                var p = $e.fn.extend(event_object, {});
-                this.listen.done(p);
-            }
-        },
-
-        /**
          * 返回主缓存区数据行数
          *
          * @returns
@@ -1106,8 +934,6 @@
                     return 0;
                 });
                 this.buildRowNum();
-                var eo = this.buildEventObject(ado_status.REFRESH);
-                this.doDataListen(eo);
             }
         },
 
@@ -1157,7 +983,6 @@
                 this.rows = [];
             }
             this.buildRowNum();
-            this.doDataListen(this.buildEventObject(ado_status.REFRESH));
         },
 
         toPage: function (page, options) {
@@ -1184,16 +1009,6 @@
             return false;
         },
         release: function () {
-            if (this.listen) {
-                this.listen.release();
-                this.listen = null;
-            }
-            if (this.varListen) {
-                for (var i in this.varListen) {
-                    this.varListen[i].release();
-                }
-                this.varListen = null;
-            }
             this.reset(true);
             // 该函数未声明
             $e.removeADO(this.getName(), this.getActiveModuleName());
@@ -1213,11 +1028,6 @@
         this.__rowid = rowid;
         this.__data = new Array(len);
         this.__cols = columnsindex;
-        // 给数据列设置了取值函数和存值函数
-        for (var i in columnsindex) {
-            watchData(this, i);
-        }
-        watchData(this, "$row");
     }
 
     RowData.prototype = {
@@ -1294,37 +1104,6 @@
             this.ado = null;
         }
     };
-
-    function watchData(rowdata, name) {
-        if (!(name in rowdata) && (name in rowdata.__cols) || name == '$row') {
-
-            Object.defineProperty(rowdata, name, {
-                //enumerable : true,
-                configurable: true,
-                get: function () {
-                    return (name == "$row") ? (this.__rownum + 1) : this.__data[this.__cols[name]];
-                },
-                set: function (val) {
-                    // 不建议使用
-//					var col = this.__cols[name.toLowerCase()];
-//					if (col === 0 || col) {
-//						this.__data[col] = val;
-//					}
-                }
-            });
-        }
-    }
-
-    function createDirectFunc(exp) {
-        if (typeof exp != 'function') {
-            if (exp.indexOf('return') < 0) {
-                exp = "return (" + exp + ")";
-            }
-            return new Function("with(this){" + exp + "}");
-        }
-        return exp;
-    }
-
     $e.fn.extend($e.ModuleCell, ADOAgent.prototype);
     $e.ADOAgent = ADOAgent;
 }($e);
