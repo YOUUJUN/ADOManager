@@ -13,7 +13,7 @@ const errorCaptured = async (asyncFunc, ...params) =>{
 
 const baseURL = "http://192.168.3.62:3001";
 
-const $axios =  async (options = {}) => {
+const myAxios =  async (options = {}) => {
 
     options = Object.assign({},{
         baseURL,
@@ -56,7 +56,7 @@ const $axios =  async (options = {}) => {
     });
 
 
-    let [error,res] = await $axios(options);
+    let [error,res] = await errorCaptured($axios, options);
 
     if(error){
         if (error.response) {
@@ -76,10 +76,14 @@ const $axios =  async (options = {}) => {
             console.log('Error', error.message);
         }
         console.log(error.config);
+
+
+        return Promise.reject(error);
     }
 
-
-    return res;
+    if(res){
+        return res;
+    }
 };
 
 
