@@ -145,7 +145,7 @@
 			}
 		},
 		{
-			"path": "pages/user/user",
+			"path": "pages/test/test",
 			"style": {
 				"navigationBarTitleText": "我的"
 			}

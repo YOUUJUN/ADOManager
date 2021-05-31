@@ -1,5 +1,3 @@
-import axios from './http';
-
 const engine = {
 
 
@@ -7,7 +5,7 @@ const engine = {
 };
 
 
-export function call() {
+export function call(data) {
 
 }
 
