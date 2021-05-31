@@ -1,27 +1,37 @@
 class Adapter {
-    constructor(props) {
 
+    constructor(vue){
+        this.vue = vue
     }
 
-    cacheData(rows = {}, vars = {}, envs = {}){
+    mappingData(adoName, rows1, vars1){
+        this[adoName]={rows:rows1,vars:vars1};
+    };
 
-        const ado = {
-            rows,
-            vars,
-            envs
-        }
+    outData(adoname,rows){
+        this.vue._data[this[adoname]['rows']]=rows;
+    }
 
-        this.adoAdapter = ado;
+    getData(adoname){
+        return this.vue._data[this[adoname]['rows']];
     }
 
 
-    setValue(){
-        this.adoAdapter.rows = [1,2,3];
+    setValue  (adoName){
+        // this.vue.$set(this.adoAdapter, 'rows', 2);
+        // this.adoAdapter.rows = 2;
+        // this.vue._data.rows = 2;
+        //console.log('this==>',this);
+        //console.log('adoName',this[adoName]);
+        // this[adoName].rows[0] = 1;
+        //this[adoName].rows = {name:'abc',age:8};
+        //this.vue._data.rows[0] = this[adoName].rows;
+
+        // this.vue.$set(this[adoName].rows,0,'abc');
+        this.outData('car',[{name:'abc',age:8}]);
     }
 }
 
 
-const adapter = new Adapter;
 
-
-export default adapter;
+export default Adapter;
