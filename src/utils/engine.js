@@ -118,16 +118,6 @@ var foo = new ActiveModule;
 
 
 
-const engine = {
-    foo : 1,
-    hi (){
-
-    }
-
-
-};
-
-
 
 export function call() {
 
