@@ -52,6 +52,14 @@ ADOManager.install = function (Vue, options) {
 
 };
 
+var adapter={
+    ados: {
+        car: {
+            rows: vue.car_rows,
+            vars: vue.car_vars
+        }
+    }
+}
 
 export default ADOManager
 

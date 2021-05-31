@@ -10,21 +10,34 @@ const errorCaptured = async (asyncFunc, ...params) =>{
     }
 };
 
-let request  = async () =>{
+let request  = async (url) =>{
     function foo(data) {
-        return data;
+        let err={
+            code:10,
+            message:"ttttt"
+        }
+        return new Promise.reject(err)
+
+
+        //return data;
     }
 
-    let result = await $axios({
+   let result = await myAxios({
         transformResponse : [foo]
     })
+
+
 
     return result
 }
 
 
-request('Save').then(result =>{
+request('call',"Save",).then(result =>{
 
+    console.log('==============');
+}).catch(err =>{
+
+    //$e.parseError(err);
 })
 
 
@@ -34,11 +47,11 @@ request('Save').then(result =>{
 
 const baseURL = "http://192.168.3.62:3001";
 
-const $axios =  async (options = {}) => {
+const myAxios =  async (options = {}) => {
 
     options = Object.assign({},{
         baseURL,
-        method : 'GET',
+        method : 'POST',
         withCredentials: false, //CORS
         timeout : 120000,
         responseType: 'json',
@@ -56,29 +69,20 @@ const $axios =  async (options = {}) => {
 
 
     let $axios = axios.create(options);
+    try{
+        //console.log('params',params);
+        let res = await $axios(options);
+
+    }catch (e) {
+        return e;
+    }
 
 
-    // Add a request interceptor
-    $axios.interceptors.request.use((config) =>{
-
-        return config;
-    },(error)=>{
-
-        return Promise.reject(error);
-    });
 
 
-    $axios.interceptors.response.use((response) =>{
-
-        //do something with response data;
-        return response;
-    }, (error) =>{
-
-        return Promise.reject(error);
-    });
 
 
-    let [error,res] = await $axios(options);
+    let [error,res] = await errorCaptured($axios, options);
 
     if(error){
         if (error.response) {
@@ -98,14 +102,18 @@ const $axios =  async (options = {}) => {
             console.log('Error', error.message);
         }
         console.log(error.config);
+
+
+        return Promise.reject(error);
     }
 
-
-    return [error,res];
+    if(res){
+        return res;
+    }
 };
 
 
-export default $axios;
+export default myAxios;
 
 
 
