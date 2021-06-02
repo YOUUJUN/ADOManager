@@ -40,7 +40,9 @@ export function extend(target = {}, source ={}, overwrite = true, isdeep = true)
                 target[key] = isTypeOf(source[key], 'array') ? [] : {};
                 extend(target[key], source[key]);
             }
-        }else if(!isdeep || (isdeep && !(typeof source[key] === 'object'))){
+        }
+
+        if(!isdeep || (isdeep && !(typeof source[key] === 'object'))){
             if((target.hasOwnProperty(key) && overwrite) || !target.hasOwnProperty(key)){
                 target[key] = source[key];
             }

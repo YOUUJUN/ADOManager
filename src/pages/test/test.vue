@@ -95,7 +95,7 @@
                 };
 
 
-                let result = extend(target, source, true, false);
+                let result = extend(target, source, false, true);
 
                 console.log('result==>',result);
 
