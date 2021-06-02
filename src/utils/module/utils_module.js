@@ -29,7 +29,7 @@ export function isTypeOf (item, type){
  * @param overwrite     是否覆盖子对象已有属性
  * @param isdeep    是否深度继承
  * @returns {any}   若target 不为Object类型，返回空对象，若source不为Object类型，返回target
- * 
+ *
  */
 
 export function extend(target = {}, source ={}, overwrite = true, isdeep = true) {

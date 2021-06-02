@@ -18,11 +18,11 @@
 
 <script>
 
-    import Adapter from '../../utils/adapter';
+    import Adapter from '../../utils/module/adapter';
 
-    import adoManager from '../../utils/ado_module';
+    import adoManager from '../../utils/module/ado_module';
 
-    import {extend} from "../../utils/utils_module";
+    import {extend} from "../../utils/module/utils_module";
 
     export default {
         name: "test",
