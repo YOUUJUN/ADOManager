@@ -18,9 +18,11 @@
 
 <script>
 
-    import Adapter from '../../utils/adapter';
+    import Adapter from '../../utils/module/adapter';
 
-    import adoManager from '../../utils/ado_module';
+    import adoManager from '../../utils/module/ado_module';
+
+    import {extend} from "../../utils/module/utils_module";
 
     export default {
         name: "test",
@@ -50,6 +52,10 @@
             // adapter.setValue('car');
             this.adapter = adapter;
             console.log('adapter',adapter);
+
+
+
+            this.test()
         },
 
         methods : {
@@ -63,6 +69,32 @@
             setValue2(){
                 //this.$set(this.rows, 0, 1);
                 //this.$set(this.rows, 1, 2);
+            },
+
+
+            test(){
+                let target = {
+                    foo :1,
+                };
+
+
+                let source = {
+                    foo : 2,
+                    bar : {
+                        baz : 3
+                    }
+                };
+
+
+                let result = extend(target, source, false, false);
+
+                console.log('result==>',result);
+
+
+                setTimeout(()=>{
+                    source.bar.baz = 4;
+                    console.log('result==>',result);
+                },1000)
             }
         }
     }

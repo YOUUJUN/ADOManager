@@ -7,21 +7,6 @@ class ActiveModule{
         this.engine=engine;
         this.ados = {};
     }
-
-    /**
-     *
-     * @param name
-     * @param ados 用“，”分割的数据对象名
-     * @param jsonparm 要传递的json格式数据
-     * @param options
-     */
-    // call = (name, ados, jsonparm, options)=> {
-    //     return this.request("call", name, ados, jsonparm, options);
-    // }
-    //
-    // selfCall=(name, ados, jsonparm, options)=> {
-    //     return this.request("async", name, ados, jsonparm, options);
-    // }
     getADO=(name)=>{
         name=this.engine.fn.convertName(name);
         return this.ados[name];
@@ -32,40 +17,21 @@ class ActiveModule{
             this.ados[name] = ado;
         }
     }
-    getAdapter(){
+    getAdapter=()=>{
         return this._adapter;
     }
-    createAdapter(vue){
-        if (!this._adapter) {
+    createAdapter=(vue,reset)=>{
+        if (!this._adapter || !!reset) {
+            if (this._adapter){
+                this._adapter.release();
+            }
             this._adapter = new Adapter(vue);
         }
         return this._adapter;
     }
-    /**
-     *
-     * @param name
-     * @param type
-     *            getado/getview/getany/call/[selfcall/async]/release
-     * @param options
-     */
-    // request=(type, name, ados, jsondata, options)=> {
-    //     options = options || {};
-    //     var am = this.getActiveModuleName();
-    //     var cell = null;
-    //     if (type == 'getado') {
-    //         cell = this.engine.getADO(name, am);
-    //     }
-    //     if (cell){
-    //         return cell;
-    //     }else {
-    //         options.params = options.params || {};
-    //         options.params._mn = options.params._mn || this._amn;
-    //         return this.engine.request(this._amn, type, name, ados, jsondata, options);
-    //     }
-    // }
     release=()=>{
         if (this.engine) {
-            for (var i in this.ados) {
+            for (let i in this.ados) {
                 this.ados[i].release();
             }
             this.ados = null;
@@ -93,7 +59,7 @@ class Adapter {
         this[adoname]={rows:rows1,vars:vars1};
     };
     outData(adoname,rows,isclear){
-        var rows0=this.vue._data[this[adoname]['rows']];
+        let rows0=this.vue._data[this[adoname]['rows']];
         if (isclear){
             rows0.splice(0,rows0.length);
         }
@@ -110,7 +76,6 @@ class Adapter {
         this.ados = null;
         this.adoname=null;
     }
-
 }
 
 class Engine{
@@ -462,21 +427,21 @@ class Engine{
             if (!Object.getPrototypeOf) {
                 return true;
             }
-            var proto = Object.getPrototypeOf(obj);
+            let proto = Object.getPrototypeOf(obj);
             if (this.plainObj.hasOwnProperty.call(proto, "constructor")) {
                 return this.plainObj.hasOwnProperty.toString.call(proto.constructor) === this.plainObj.string;
             }
             return false;
         },
         isEmptyObject: function (e) {
-            for (var t in e)
+            for (let t in e)
                 return false;
             return true;
         },
         extend: function (source, target, overwrite,isdeep) {
             if (source && target) {
                 overwrite = !!overwrite;
-                for (var f in source) {
+                for (let f in source) {
                     //目标对象没有该属性，或overwrite为true
                     if ((target[f] == undefined)) {
                         if (this.isPlainObject(source[f])){
@@ -561,11 +526,11 @@ class Engine{
             if (!norand) {
                 url._rand = this.randNum();
             }
-            var url1 = url._baseURI || (this._baseURI + "cloud?");
+            let url1 = url._baseURI || (this._baseURI + "cloud?");
             delete url['_baseURI'];
-            var type, value;
-            var link = url1.indexOf('?') >= 0;
-            for (var key in url) {
+            let type, value;
+            let link = url1.indexOf('?') >= 0;
+            for (let key in url) {
                 type = (typeof key);
                 if (typeof type == 'string' || type instanceof String) {
                     value = url[key] + '';
@@ -586,9 +551,9 @@ class Engine{
 
     getURL=(type, options, hasdata, noid)=>{
         options = options || {};
-        $e.fn.extend(
+        this.fn.extend(
             {
-                _hasdata: $e.fn.getBoolean(hasdata) ? "1" : "0",
+                _hasdata: this.fn.getBoolean(hasdata) ? "1" : "0",
                 _type: type,
                 _amgn: this._amgn,
                 _baseURI: this._baseURI + "cloud?",
@@ -598,7 +563,7 @@ class Engine{
     }
     // 产生随机数,ok
     randNum=()=>{
-        var today = new Date();
+        let today = new Date();
         return Math.abs(Math.sin(today.getTime()));
     }
     //type, name, ados, jsondata, options
@@ -610,7 +575,7 @@ class Engine{
         return this.request(amn,"async", name, ados, jsondata, options);
     }
     buildData=(amn, ados, jsondata)=>{
-        var data = {};
+        let data = {};
         if (ados) {
             data.ados = this.getEditADOData(amn, ados);
         }
@@ -620,7 +585,7 @@ class Engine{
         }
         return this.fn.isEmptyObject(data) ? null : JSON.stringify(data);
     }
-    request=(amn, type, name, adosname, jsondata,options)>={
+    request=(amn,type,name,adosname, jsondata,options)=>{
         // 获取需要同步的数据对象action, param, data
        amn = (amn || this._amgn);
        let data = this.buildData(amn, adosname, jsondata);
