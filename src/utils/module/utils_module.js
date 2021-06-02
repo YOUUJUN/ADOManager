@@ -28,28 +28,19 @@ export function isTypeOf (item, type){
  * @param source   继承父对象
  * @param overwrite     是否覆盖子对象已有属性
  * @param isdeep    是否深度继承
- * @returns {any}   若target 不为Object类型，返回空对象，若source不为Object类型，返回target
+ * @returns {any}
  *
  */
 
 export function extend(target = {}, source ={}, overwrite = true, isdeep = true) {
-    if(!isTypeOf(source,'object')){
-        return target;
-    }
-
-    if(!isTypeOf(target,'object')){
-        return Object.create(null);
-    }
 
     for(let key in source){
-        if(isdeep && isTypeOf(source[key],'object')){
+        if(isdeep && typeof source[key] === 'object'){
             if((target.hasOwnProperty(key) && overwrite) || !target.hasOwnProperty(key)){
                 target[key] = isTypeOf(source[key], 'array') ? [] : {};
                 extend(target[key], source[key]);
             }
-        }
-
-        if(!isdeep || (isdeep && !isTypeOf(source[key],'object'))){
+        }else if(!isdeep || (isdeep && !(typeof source[key] === 'object'))){
             if((target.hasOwnProperty(key) && overwrite) || !target.hasOwnProperty(key)){
                 target[key] = source[key];
             }
