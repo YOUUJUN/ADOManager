@@ -9,7 +9,7 @@ class Adapter {
     };
 
     outData(adoname,rows){
-        this.vue._data[this[adoname]['rows']]=rows;
+        this.vue._data[this[adoname]['rows']].push(rows);
     }
 
     getData(adoname){

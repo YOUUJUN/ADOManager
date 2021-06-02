@@ -4,6 +4,12 @@ import App from './App'
 import uView from 'uview-ui';
 Vue.use(uView);
 
+import lodash from 'lodash';
+
+lodash.defaultsDeep();
+
+
+
 //uuid
 import {v1 as uuidV1} from 'uuid';
 
