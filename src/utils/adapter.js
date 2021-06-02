@@ -1,37 +1,24 @@
 class Adapter {
-    envs={};
-    ados={
-        car:{
-            rows:{},
-            vars:{}
-        }
-        car_list:{
-
-        }
+    constructor(vue){
+        this.vue = vue
     }
-
-    constructor(vue) {
+    mappingData(adoname, rows1, vars1){
+        this[adoname]={rows:rows1,vars:vars1};
+    };
+    outData(adoname,rows,isclear){
+        var rows0=this.vue._data[this[adoname]['rows']];
+        if (isclear){
+            rows0.splice(0,rows0.length);
+        }
+        rows0.push(rows);
     }
-
-
-
-    cacheData(rows = {}, vars = {}){
-        const ados = {
-            car:{
-                rows,
-                vars
-            },
-            car_list:{
-
-            }
-        };
-
-        const envs = {}
+    getData(adoname){
+        return this.vue._data[this[adoname]['rows']];
+    }
+    getVars(adoname){
+        return this.vue._data[this[adoname]['vars']];
     }
 }
 
 
-// const adapter = new Adapter;
-
-
-export default Adapter;
+//export default Adapter;
