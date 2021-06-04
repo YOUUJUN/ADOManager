@@ -22,7 +22,7 @@
 
     import adoManager from '../../utils/module/ado_module';
 
-    import {extend} from "../../utils/module/utils_module";
+    import {isTypeOf, extend} from "../../utils/module/utils_module";
 
     export default {
         name: "test",
@@ -73,8 +73,15 @@
 
 
             test(){
+
+                let arr = [1,2,3];
+
+                console.log('isTypeOf',isTypeOf(arr, 'object'));
+
+
                 let target = {
                     foo :1,
+                    btt : [],
                 };
 
 
@@ -82,17 +89,22 @@
                     foo : 2,
                     bar : {
                         baz : 3
-                    }
+                    },
+                    btt : [1,2,3]
                 };
 
 
+<<<<<<< HEAD
                 let result = extend(target, source, false, false);
+=======
+                let result = extend(target, source, false, true);
+>>>>>>> 80c2ae1c7cba4f4f69040d6688ef55a924441347
 
                 console.log('result==>',result);
 
 
                 setTimeout(()=>{
-                    source.bar.baz = 4;
+                    source.btt[1] = 5;
                     console.log('result==>',result);
                 },1000)
             }

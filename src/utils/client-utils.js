@@ -201,6 +201,16 @@ var $e = $e || {};
             }
             return c;
         },
+        arrayFind(array,key,value){
+            if (array){
+                for (let i=0;i<array.length;i++){
+                    if (array[i][key]==value){
+                        return i;
+                    }
+                }
+            }
+            return -1;
+        },
         /**
          * 获取实际匹配类型的值,有待扩展
          *

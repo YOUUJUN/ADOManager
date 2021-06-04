@@ -31,7 +31,7 @@ ADOManager.install = function (Vue, options) {
                         ctrl2: true
                     }
                 },
-            }
+            },
             envs : {
 
             },

@@ -25,7 +25,7 @@ class ActiveModule{
             if (this._adapter){
                 this._adapter.release();
             }
-            this._adapter = new Adapter(vue);
+            this._adapter = new Adapter(vue,this._amn);
         }
         return this._adapter;
     }
@@ -45,8 +45,11 @@ class ActiveModule{
 }
 
 class Adapter {
-    constructor(vue){
+    vue=null;
+    amn=null;
+    constructor(vue,amn){
         this.vue = vue
+        this.amn=amn;
     }
 
     /**
@@ -54,19 +57,89 @@ class Adapter {
      * @param adoname
      * @param rows1 vue中的，仅指定名称即可
      * @param vars1  vue中的，仅指定名称即可
+     * @param options 存放回写的字段{writeback:['colname1','colname2']},如为空，表示会写所有字段
      */
-    mappingData(adoname, rows1, vars1){
-        this[adoname]={rows:rows1,vars:vars1};
+    mappingData(adoname, rows1, vars1,options){
+        this[adoname]={rows:rows1,vars:vars1,options:options};
     };
-    outData(adoname,rows,isclear){
+
+    /**
+     * 从ADO的
+     * @param adoname
+     * @param data 数据{type:'refresh'/edit,rows:[],clear:false/true，vars:{}}
+     * @param isclear
+     */
+    outData(adoname,data,isclear){
         let rows0=this.vue._data[this[adoname]['rows']];
-        if (isclear){
-            rows0.splice(0,rows0.length);
+        if (data.type=='refresh'){
+            if (!!data.clear){
+                rows0.splice(0,rows0.length);
+            }
+            rows0.push(data.rows);
+        }else {
+            let row=0,rowid=-1,status='0',rows=data.rows;
+            //ROW_ADD: '2',ROW_EDIT: '1',ROW_DELETE: '3'
+            for (let i=0;i<rows.length;i++){
+                rowid=rows[i].__rowid;
+                status==rows[i].__status;
+                row=$e.fn.arrayFind(rows0,'__rowid',rowid);
+                if (status=='1'){
+                    //修改
+                    if (row>=0){
+                        $e.fn.extend(rows[i],rows0[row],true);
+                    }
+                }else if (status=='2'){
+                    if (row>=0){
+                        //修改
+                        $e.fn.extend(rows[i],rows0[row],true);
+                    }else{
+                        //增加
+                        let next=rows[i].__nextrow;
+                        if (next>=0){
+                            rows0.splice(next,0,rows[i]);
+                        }else{
+                            rows0.push(rows[i]);
+                        }
+                    }
+                }else if (status=='3'){
+                    //删除
+                    if (row>=0){
+                        rows0.splice(row,1);
+                    }
+                }
+            }
         }
-        rows0.push(rows);
+        let vars=data['vars'];
+        if (vars){
+            //vars 中的变量名是区分大小写的
+            let vars0=this.vue._data[this[adoname]['vars']];
+            if (vars0) {
+                for (let i in vars) {
+                    vars0[i]=vars[i];
+                }
+            }
+        }
     }
-    getData(adoname){
-        return this.vue._data[this[adoname]['rows']];
+   inData(adoname){
+        let cols=null;
+        if (this[adoname]['options']){
+            cols=this[adoname]['options']['writeback'];
+        }
+        if (cols!=='none') {
+            let ado=$e.getActiveModule(this.amn).getADO();
+            let row,idRows=ado.getRowIDMap();
+            let rows0=this.vue._data[this[adoname]['rows']];
+            for (let i=0;i<rows0.length;i++) {
+                row=idRows(rows0[i].__rowid);
+                if (!cols) {
+                    for (let j=0;j<cols.length;j++){
+                        ado.setValueAt(row,cols[j],rows0[i][cols[j]]);
+                    }
+                } else {
+                    ado.setValuesAt(row,rows0[i]);
+                }
+            }
+        }
     }
     getVars(adoname){
         return this.vue._data[this[adoname]['vars']];
@@ -115,9 +188,9 @@ class Engine{
          * @param c1
          */
         countChar: function (text, c1) {
-            var c = 0;
+            let c = 0;
             if (text) {
-                for (var i = 0; i < text.length; i++) {
+                for (let i = 0; i < text.length; i++) {
                     if (text.charAt(i) == c1) {
                         c++;
                     }
@@ -167,9 +240,9 @@ class Engine{
                             if (typeof value == 'number' || !isNaN(value)) {
                                 value = new Date(parseFloat(value));
                             } else {
-                                var mils=0;
+                                let mils=0;
                                 if (typeof(value)=='string'){
-                                    var p=value.indexOf('.');
+                                    let p=value.indexOf('.');
                                     if (p>0){
                                         mils=parseInt(value.substring(p+1));
                                         value=value.substring(0,p);
@@ -217,7 +290,7 @@ class Engine{
             }
             if (date && date instanceof Date) {
                 ftext = ftext ? ftext : "yyyy-MM-dd HH:mm:ss";
-                var o = {
+                let o = {
                     "M+": date.getMonth() + 1,
                     "d+": date.getDate(),
                     "H+": date.getHours(),
@@ -234,7 +307,7 @@ class Engine{
                         .getFullYear() + "")
                         .substr(4 - RegExp.$1.length));
                 }
-                for (var k in o) {
+                for (let k in o) {
                     if (new RegExp("(" + k + ")").test(ftext)) {
                         ftext = ftext
                             .replace(
@@ -258,7 +331,7 @@ class Engine{
          */
         isDateText: function (s) {
             if (s && (s + '').trim() && !!isNaN(s)) {
-                var date = new Date(s);
+                let date = new Date(s);
                 return !isNaN(date.getDay());
             }
             return false;
@@ -278,17 +351,17 @@ class Engine{
             if (isNaN(num) || num == null) {
                 return '';
             }
-            var str = '';
+            let str = '';
             if (num || num === 0) {
                 if (!ftext) {
                     return num + '';
                 }
-                var fmt = ftext = ftext.trim();
+                let fmt = ftext = ftext.trim();
                 if (fmt.endsWith("%")) {
                     num = num * 100;
                     fmt = fmt.substr(0, fmt.length - 1);
                 }
-                var split = false;
+                let split = false;
                 fmt = fmt.split('.');
                 if (fmt.length > 1) {
                     // 有小数,四舌五入
@@ -296,12 +369,12 @@ class Engine{
                 } else {
                     num = num.toFixed(0);
                 }
-                var p = fmt[0].lastIndexOf(",");
+                let p = fmt[0].lastIndexOf(",");
                 if (p >= 0) {
                     fmt[0] = fmt[0].substring(p + 1);
                     split = (fmt[0].length > 0);
                 }
-                var str_num = num.split('.');
+                let str_num = num.split('.');
                 if (split) {
                     str = str_num[0].replace(this.getRegExp(fmt[0].length), "$1,");
                 } else {
@@ -310,7 +383,7 @@ class Engine{
                 }
                 if (str_num.length > 1 && fmt.length > 1) {
                     //有小数
-                    var i = str_num[1].length - 1;
+                    let i = str_num[1].length - 1;
                     while (i >= 0) {
                         if (str_num[1].charAt(i) != '0' || fmt[1].charAt(i) != '#') {
                             break;
@@ -330,7 +403,7 @@ class Engine{
         },
         getRegExp: function (type) {
             type = type + '';
-            var reg = this.reg_fmt[type];
+            let reg = this.reg_fmt[type];
             if (!reg) {
                 this.reg_fmt[type] = reg = new RegExp('(\\d{1,' + type + '})(?=(\\d{' + type + '})+(?:$))', "g");
             }
@@ -407,10 +480,10 @@ class Engine{
             return value == null ? '' : value;
         },
         parseVars: function (array) {
-            var vars = {};
+            let vars = {};
             if (array && array.length > 0) {
-                var v1;
-                for (var i = 0; i < array.length; i++) {
+                let v1;
+                for (let i = 0; i < array.length; i++) {
                     v1 = array[i];
                     vars[v1.name] = this.parseValue(v1.value, v1.type);
                 }
@@ -456,10 +529,10 @@ class Engine{
                                 target[f]={};
                             }
                             this.extend(source[f],target[f],overwrite,isdeep);
-                        }else if (overwrite){
+                        }else if (overwrite  && target[f]!==source[f]){
                             target[f] = source[f];
                         }
-                    }else if (overwrite){
+                    }else if (overwrite && target[f]!==source[f]){
                         target[f] = source[f];
                     }
                 }
@@ -585,6 +658,35 @@ class Engine{
         }
         return this.fn.isEmptyObject(data) ? null : JSON.stringify(data);
     }
+    getEditADOData=(amn, ados)=>{
+        let data = [];
+        if (ados) {
+            var ado, names, amn, name, p;
+            names = (ados instanceof Array) ? ados : ados.split(",");
+            for (let i = 0; i < names.length; i++) {
+                p = names[i].indexOf("/");
+                if (p >= 0) {
+                    amn = names[i].substring(0, p);
+                    name = names[i].substring(p + 1);
+                } else {
+                    amn = wn;
+                    name = names[i];
+                }
+                ado = $e.getADO(name, amn);
+                if (ado) {
+                    // 此处只有存在该数据对象时,才获取同步数据
+                    let adata = ado.getUpdateData();
+                    if (adata) {
+                        data.push(adata);
+                    }
+                }
+            }
+        }
+        return data;
+    }
+
+
+
     request=(amn,type,name,adosname, jsondata,options)=>{
         // 获取需要同步的数据对象action, param, data
        amn = (amn || this._amgn);
@@ -600,7 +702,7 @@ class Engine{
             _name: name,
             _type: type,
             _hasdata: (data ? "1" : "0"),
-            _checkid: $e.getEnv('_checkid') || ''
+            _checkid: this._checkid || ''
         };
         options = options || {};
         if (options.async == undefined) {
@@ -617,7 +719,7 @@ class Engine{
             if (this.am) {
                 this.am = null;
             }
-            for (var i in this.ams) {
+            for (let i in this.ams) {
                 this.ams[i].release();
             }
             this.ams = null;
