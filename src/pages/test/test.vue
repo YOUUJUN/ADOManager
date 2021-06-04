@@ -20,8 +20,6 @@
 
     import Adapter from '../../utils/module/adapter';
 
-    import adoManager from '../../utils/module/ado_module';
-
     import {isTypeOf, extend} from "../../utils/module/utils_module";
 
     export default {
@@ -61,7 +59,6 @@
         methods : {
 
             setValue(){
-                adoManager.fillAdapter(this.adapter);
                 // this.rows=this.adapter.car.rows;
                 //console.log(this.rows);
             },
