@@ -141,6 +141,11 @@ class Adapter {
             }
         }
     }
+
+    /**
+     * 返回vue中使用的vars
+     * @param adoname
+     */
     getVars(adoname){
         return this.vue._data[this[adoname]['vars']];
     }
