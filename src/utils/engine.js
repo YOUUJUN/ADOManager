@@ -165,6 +165,22 @@ class Engine{
     _envs={};
     am=null;
     ams={};
+    os={
+        isAndroid: function () {
+            const res = uni.getSystemInfoSync();
+            return res.platform.toLocaleLowerCase() == "android"
+        },
+
+        /**
+         * 是否iphone
+         * @returns {boolean}
+         */
+        isIphoneX: function () {
+            const res = uni.getSystemInfoSync();
+            const model = res.model.replace(/\s/g, "").toLowerCase()
+            return model.startsWith('iphone');
+        }
+    }
     fn={
         reg_fmt: {},
         convertName(name){
@@ -202,6 +218,38 @@ class Engine{
                 }
             }
             return c;
+        },
+        toast: function (text, icon, duration) {
+            uni.showToast({
+                title: text || "出错啦~",
+                icon: icon || 'none',
+                duration: duration || 2000
+            })
+        },
+        //title, content, showCancel = false, callback, confirmColor, confirmText, cancelColor, cancelText
+        showModal: function (title, content, confirm,cancel) {
+            let hasConfirm=!!confirm;
+            let hasCancel=!!cancel;
+            uni.showModal({
+                title: title || '提示',
+                content: content,
+                confirmColor: hasConfirm?(confirm.color || "#e41f19"):"#e41f19",
+                confirmText: hasConfirm?(confirm.text || "确定"):"确定",
+                showCancel: hasCancel,
+                cancelColor: hasCancel?(cancel.color || "#555"):"#555",
+                cancelText: hasCancel?(cancel.text || "取消"): "取消",
+                success(res) {
+                    if (res.confirm) {
+                        if (hasConfirm && confirm.method){
+                            confirm.method();
+                        }
+                    } else {
+                        if (hasCancel && cancel.method){
+                            cancel.method();
+                        }
+                    }
+                }
+            })
         },
         /**
          * 获取实际匹配类型的值,有待扩展
@@ -703,7 +751,7 @@ class Engine{
         let settings = {
             _baseURI: this._baseURI + "cloud?",
             _amgn: this._amgn,
-            _amn: amn,
+            _amn: amn||this._amgn,
             _name: name,
             _type: type,
             _hasdata: (data ? "1" : "0"),
