@@ -13,29 +13,18 @@ const ado_status = {
 };
 
 
-
 class ADOAgent{
     dataPage = null;
     // 是否存在修改行为
     isEdit = false;
-    // eventObject: null,
     editCols = null;// 可以修改的列序号
-    // 监听数据变动事件
-    // 使用的时候当做了数组，结果赋值的时候是null，
-    // 这样是有问题的
-    // listen: [],
     // 是否正在刷新
     locked = false;
     preRowNum = -1;
     vars = null;
-    // 数据加载时延时执行的状态,用于记录响应服务器端数据更新时的状态
-    //delayType: '',
-    // delayVar: null,
-    // delayEvents: null,
     onLoad = null;// 加载完成时的事件函数
     isInited = false;
     maxRowID = 0;
-    // maxEvents:10,//在超过10行数据变动事件时，自动转换为REFRESH事件
 
     constructor(name) {
         // 该组件的数据存放使用SelfArray类型的变量作为容器
@@ -44,28 +33,21 @@ class ADOAgent{
         this.columns = [];// 所有的列定义,
         this.colsIndex = {};// 所有的列对应的序号,
         this.name = name;
-        // this.listen = $e.events.createEventCell();// 所有注册的事件
-        // this.eventObject = this.buildEventObject(ado_status.REFRESH);
         this.reflectData=null;//{type:'refresh'/'edit',rows:[],clear:false/true,vars:{}};
     }
 
-    init = ({extend, columns, updateColumns, updateColumns, pageLoadReset, pageRows, page, pages}) => {
-        // 创建结构
-        if(extend){
-            let obj = createObject(extend);
-            $extend(this, obj, true);
-        }
-
+    init = ({columns, updateColumns, updateColumns, pageLoadReset, pageRows, page, pages}) => {
         if (columns) {
-            columns.forEach((cl, index) => {
-                let column = new Column(cl.name, cl.dataType, cl.precision, cl.defaultValue);
+            columns.forEach((c1, index) => {
+                let column = new Column(c1.name, c1.dataType, c1.precision, c1.defaultValue);
                 this.columns.push(column);
-                this.colsIndex[column.name] = j;
-                this.colsIndex[cl.name] = j;
+                this.colsIndex[column.name] = index;
+                this.colsIndex[c1.name] = index;
             })
         }
         this.editCols = updateColumns ? updateColumns.split(",") : [];
         this.pageLoadReset = getBoolean(pageLoadReset, true);
+        forActiveCell(props, this);
 
         // 实例化 dataPage
         this.dataPage = new DataPage(this, pageRows, page, pages);
@@ -194,7 +176,7 @@ class ADOAgent{
             }
 
             if (vars){
-                $extend(this.vars, vars,true);
+                $extend(this.vars, vars,true,true);
             }
             this.isInited=true;
         } catch (error) {
@@ -209,6 +191,13 @@ class ADOAgent{
 
     getDataPage = () => this.dataPage;
 
+    getReflectData = (clear) =>{
+        let data=this.reflectData;
+        if (clear){
+            this.reflectData=null;
+        }
+        return data;
+    };
 
     /**
      * 插入一行,内部调用，没有触发任何状态改变和事件
@@ -551,9 +540,9 @@ class ADOAgent{
 
             }
         }
-        if (hasvar) {
-            $extend(rs, this.vars);
-        }
+        // if (hasvar) {
+        //     $extend(rs, this.vars);
+        // }
         return rs;
     };
 
