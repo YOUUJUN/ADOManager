@@ -52,8 +52,6 @@ export function extend(target = {}, source ={}, overwrite = true, isdeep = true)
     return target;
 }
 
-
-
 export const fn = {
 
     reg_fmt: {},

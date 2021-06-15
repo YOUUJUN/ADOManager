@@ -442,7 +442,7 @@ class Engine {
     }
 }
 
-class Adapter extends Engine{
+class Adapter{
     vue = null;
     amn = null;
 
@@ -470,9 +470,10 @@ class Adapter extends Engine{
      * @param data 数据{type:'refresh'/edit,rows:[],clear:false/true，vars:{}}
      * @param isclear
      */
-    outData(adoname, isclear) {
+    outData(ado, isclear) {
         //必须事先已经建立映射关系
         if (this[adoname]) {
+
             let data=this.getADO(adoname,this.amn).getReflectData(!!isclear);
             if (data) {
                 let rows0 = this.vue._data[this[adoname]['rows']];
@@ -568,11 +569,9 @@ class Adapter extends Engine{
 class ActiveModule {
     _amn = '';
     _adapter = null;
-    engine = null;
 
-    constructor(amn, engine) {
+    constructor(amn) {
         this._amn = amn;
-        this.engine = engine;
         this.ados = {};
     }
 
@@ -600,12 +599,11 @@ class ActiveModule {
         return this._adapter;
     }
     release = () => {
-        if (this.engine) {
+        if (this.ados) {
             for (let i in this.ados) {
                 this.ados[i].release();
             }
             this.ados = null;
-            this.engine = null;
             if (this._adapter) {
                 this._adapter.release();
                 this._adapter = null;
@@ -616,12 +614,9 @@ class ActiveModule {
 
 let $e = new Engine();
 
-
-
-
+$e.fn = fn;
 
 export default $e;
 
-export const fn = $e.fn;
 
 
