@@ -1,4 +1,4 @@
-import {extend as $extend, fn} from './utils_module';
+import {extend as $extend, fn} from './utils_module.js';
 
 const {getBoolean, parseValue} = fn;
 
@@ -129,7 +129,7 @@ class ADOAgent{
         cell._amn = props._amn;
     };
 
-    init = ({columns, updateColumns, updateColumns, pageLoadReset, pageRows, page, pages}) => {
+    init = ({columns, updateColumns, pageLoadReset, pageRows, page, pages}) => {
         if (columns) {
             columns.forEach((c1, index) => {
                 let column = new Column(c1.name, c1.dataType, c1.precision, c1.defaultValue);
@@ -146,11 +146,11 @@ class ADOAgent{
         this.dataPage = new DataPage(this, pageRows, page, pages);
     };
 
-    loadData = ({type, rowsData, vars, page, pages, status, vars}) => {
+    loadData = ({type, rowsData, vars, page, pages, status =''}) => {
         let addType = type;
         let chgRow = -1;//, chgRowID = -1;
         // 行数据是个数组
-        let rowdata = null , status='';
+        let rowdata = null;
         let delRows = 0;
         let editRows = 0;
         let addRows = 0;

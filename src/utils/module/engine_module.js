@@ -1,6 +1,6 @@
-import ADOAgent from './ado_module';
+import ADOAgent from './ado_module.js';
 
-import {fn} from './utils_module';
+import {fn} from './utils_module.js';
 
 
 class Engine {
@@ -24,7 +24,7 @@ class Engine {
         let am1 = this.getActiveModule(amn);
         let act = options['_act'];
         if (!options.success) {
-            options.success = this.inited;
+            options.success = this._inited;
             options.context = this;
         } else {
             options.success = [this.initEnd, options.success];
@@ -616,12 +616,9 @@ class ActiveModule {
 
 let $e = new Engine();
 
-
-
+$e.fn = fn;
 
 
 export default $e;
-
-export const fn = $e.fn;
 
 
