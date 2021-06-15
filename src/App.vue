@@ -34,6 +34,12 @@
                 this.initDB();
             })
 
+
+
+
+            this.$e.init();
+
+
         },
 
 		onShow: function() {

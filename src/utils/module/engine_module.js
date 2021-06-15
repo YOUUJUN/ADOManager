@@ -295,7 +295,9 @@ class Engine {
             fn.extend(options.params, settings, true);
         }
         options.error = options['error'] || this.defa_error;
-        this.ajax(settings, data, options);// , null, null, options
+        return new Promise((resolve, reject) => {
+            this.ajax(settings, data, options, resolve, reject);  // , null, null, options
+        })
     }
     //处理默认的系统消息
     defaultError = (err) => {
