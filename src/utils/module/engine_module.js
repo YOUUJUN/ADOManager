@@ -1,6 +1,6 @@
-import ADOAgent from './ado_module';
+import ADOAgent from './ado_module.js';
 
-import {fn} from './utils_module';
+import {fn} from './utils_module.js';
 
 
 class Engine {
@@ -24,7 +24,7 @@ class Engine {
         let am1 = this.getActiveModule(amn);
         let act = options['_act'];
         if (!options.success) {
-            options.success = this.inited;
+            options.success = this._inited;
             options.context = this;
         } else {
             options.success = [this.initEnd, options.success];
@@ -41,7 +41,7 @@ class Engine {
         this._lifeType = (options['lifeType'] || 'keep') == 'keep';
         this._inited = true;
     }
-    forActiveCell= (props, cell)=>{
+    forActiveCell = (props, cell) => {
         cell.name = cell.name || props.name;
         cell._mn = props._mn;
         cell._amn = props._amn;
@@ -138,26 +138,30 @@ class Engine {
         }
         return fn.isEmptyObject(data) ? null : JSON.stringify(data);
     }
-    getEditADOData = (_amn, ados) => {
+    getEditADOData = (amn, ados) => {
         let data = [];
         if (ados) {
-            var ado, names, amn, name, p;
+            let ado, names,adapter;
             names = (ados instanceof Array) ? ados : ados.split(",");
             for (let i = 0; i < names.length; i++) {
-                p = names[i].indexOf("/");
-                if (p >= 0) {
-                    amn = names[i].substring(0, p);
-                    name = names[i].substring(p + 1);
-                } else {
-                    amn = _amn;
-                    name = names[i];
-                }
-                ado = this.getADO(name, amn);
-                if (ado) {
-                    // 此处只有存在该数据对象时,才获取同步数据
-                    let adata = ado.getUpdateData();
-                    if (adata) {
-                        data.push(adata);
+                // p = names[i].indexOf("/");
+                // if (p >= 0) {
+                //     amn = names[i].substring(0, p);
+                //     name = names[i].substring(p + 1);
+                // } else {
+                //     amn = _amn;
+                //     name = names[i];
+                // }
+                adapter=this.getAdapter(amn);
+                if (adapter) {
+                    ado = this.getADO(names[i], amn);
+                    if (ado) {
+                        adapter.inData(ado);
+                        // 此处只有存在该数据对象时,才获取同步数据
+                        let adata = ado.getUpdateData();
+                        if (adata) {
+                            data.push(adata);
+                        }
                     }
                 }
             }
@@ -218,7 +222,7 @@ class Engine {
                             // 没有建立ycdb
                             ado = new ADOAgent(name);
                             ado.init(prop);
-                            this.getActiveModule(amn,true).addADO(ado);
+                            this.getActiveModule(amn, true).addADO(ado);
                             mkados.push(ado);
                         }
                     }
@@ -251,17 +255,17 @@ class Engine {
                     }
                 }
             }
-            if (ds){
+            if (ds) {
                 let adapter;
-                for (let i=0;i<ds.length;i++){
-                    adapter=this.getAdapter(ds[i].getActiveModuleName());
-                    if (adapter){
-                        adapter.outData(ds[i].getName(),true);
+                for (let i = 0; i < ds.length; i++) {
+                    adapter = this.getAdapter(ds[i].getActiveModuleName());
+                    if (adapter) {
+                        adapter.outData(ds[i], true);
                     }
                 }
             }
             if (envs && !fn.isEmptyObject(envs)) {
-                fn.extend(envs,this.envs,true,true);
+                fn.extend(envs, this.envs, true, true);
             }
         }
     }
@@ -295,12 +299,12 @@ class Engine {
     }
     //处理默认的系统消息
     defaultError = (err) => {
-        if (err.code ==101) {
+        if (err.code == 101) {
             fn.showModal('信息提示', err.message || err.msg);
-        } else if(err.code ==111){
+        } else if (err.code == 111) {
             this.exitSystem();
         } else {
-            fn.showModal('信息提示', '错误代码：'+err.code+","+(err.message || err.msg));
+            fn.showModal('信息提示', '错误代码：' + err.code + "," + (err.message || err.msg));
         }
     }
     //退出系统，重新登录
@@ -359,9 +363,9 @@ class Engine {
                     console.log('ajax url==============================' + ajaxUrl + ', ------success---response---' + JSON.stringify(res.data));
                     try {
                         this.loadData(res.data);
-                        let err=res.data['error'];
-                        if (err){
-                            if (err.code==111){
+                        let err = res.data['error'];
+                        if (err) {
+                            if (err.code == 111) {
                                 fn.exitSystem();
                                 return;
                             }
@@ -442,13 +446,11 @@ class Engine {
     }
 }
 
-class Adapter{
+class Adapter {
     vue = null;
     amn = null;
 
     constructor(vue, amn) {
-        super();
-
         this.vue = vue;
         this.amn = amn;
     }
@@ -465,77 +467,74 @@ class Adapter{
     };
 
     /**
-     * 从ADO的修改或整体数据，输出到接口
-     * @param adoname
+     * 从服务器端就收数据(ADO的修改或整体数据)，输出到接口
+     * @param ado
      * @param data 数据{type:'refresh'/edit,rows:[],clear:false/true，vars:{}}
      * @param isclear
      */
     outData(ado, isclear) {
         //必须事先已经建立映射关系
-        if (this[adoname]) {
-
-            let data=this.getADO(adoname,this.amn).getReflectData(!!isclear);
-            if (data) {
-                let rows0 = this.vue._data[this[adoname]['rows']];
-                if (data.type == 'refresh') {
-                    if (!!data.clear) {
-                        rows0.splice(0, rows0.length);
-                    }
-                    rows0.push(data.rows);
-                } else {
-                    let row = 0, rowid = -1, status = '0', rows = data.rows;
-                    //ROW_ADD: '2',ROW_EDIT: '1',ROW_DELETE: '3'
-                    for (let i = 0; i < rows.length; i++) {
-                        rowid = rows[i].__rowid;
-                        status == rows[i].__status;
-                        row = fn.arrayFind(rows0, '__rowid', rowid);
-                        if (status == '1') {
+        let data = ado.getReflectData(!!isclear);
+        if (data) {
+            let rows0 = this.vue._data[this[adoname]['rows']];
+            if (data.type == 'refresh') {
+                if (!!data.clear) {
+                    rows0.splice(0, rows0.length);
+                }
+                rows0.push(data.rows);
+            } else {
+                let row = 0, rowid = -1, status = '0', rows = data.rows;
+                //ROW_ADD: '2',ROW_EDIT: '1',ROW_DELETE: '3'
+                for (let i = 0; i < rows.length; i++) {
+                    rowid = rows[i].__rowid;
+                    status == rows[i].__status;
+                    row = fn.arrayFind(rows0, '__rowid', rowid);
+                    if (status == '1') {
+                        //修改
+                        if (row >= 0) {
+                            fn.extend(rows[i], rows0[row], true);
+                        }
+                    } else if (status == '2') {
+                        if (row >= 0) {
                             //修改
-                            if (row >= 0) {
-                                fn.extend(rows[i], rows0[row], true);
-                            }
-                        } else if (status == '2') {
-                            if (row >= 0) {
-                                //修改
-                                fn.extend(rows[i], rows0[row], true);
+                            fn.extend(rows[i], rows0[row], true);
+                        } else {
+                            //增加
+                            let next = rows[i].__nextrow;
+                            if (next >= 0) {
+                                rows0.splice(next, 0, rows[i]);
                             } else {
-                                //增加
-                                let next = rows[i].__nextrow;
-                                if (next >= 0) {
-                                    rows0.splice(next, 0, rows[i]);
-                                } else {
-                                    rows0.push(rows[i]);
-                                }
+                                rows0.push(rows[i]);
                             }
-                        } else if (status == '3') {
-                            //删除
-                            if (row >= 0) {
-                                rows0.splice(row, 1);
-                            }
+                        }
+                    } else if (status == '3') {
+                        //删除
+                        if (row >= 0) {
+                            rows0.splice(row, 1);
                         }
                     }
                 }
-                let vars = data['vars'];
-                if (vars) {
-                    //vars 中的变量名是区分大小写的
-                    let vars0 = this.vue._data[this[adoname]['vars']];
-                    if (vars0) {
-                        for (let i in vars) {
-                            vars0[i] = vars[i];
-                        }
+            }
+            let vars = data['vars'];
+            if (vars) {
+                //vars 中的变量名是区分大小写的
+                let vars0 = this.vue._data[this[adoname]['vars']];
+                if (vars0) {
+                    for (let i in vars) {
+                        vars0[i] = vars[i];
                     }
                 }
             }
         }
     }
 
-    inData(adoname) {
+    inData(ado) {
         let cols = null;
+        let adoname=ado.getName();
         if (this[adoname]['options']) {
             cols = this[adoname]['options']['writeback'];
         }
         if (cols !== 'none') {
-            let ado = this.getActiveModule(this.amn).getADO();
             let row, idRows = ado.getRowIDMap();
             let rows0 = this.vue._data[this[adoname]['rows']];
             for (let i = 0; i < rows0.length; i++) {
@@ -617,6 +616,3 @@ let $e = new Engine();
 $e.fn = fn;
 
 export default $e;
-
-
-
