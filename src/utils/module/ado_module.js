@@ -1,6 +1,6 @@
-import {extend as $extend} from './utils_module';
+import {extend as $extend, fn} from './utils_module';
 
-import {createObject, getBoolean, forActiveCell} from './engine';
+const {getBoolean, parseValue} = fn;
 
 
 const ado_status = {
@@ -12,6 +12,93 @@ const ado_status = {
     EVENT_ALL: '#all'
 };
 
+
+// 该类定义一行的属性（而一行包含n列，其属性有：行的长度/length，状态标示/statusFlag，
+// 行的id/rowID---唯一标示该行的属性）
+class RowData{
+    __rownum = -1;
+    __row = -1;
+    constructor(len, status, rowid, columnsindex){
+        // 行数据(每一个元素就是一个DataColumn),变量rowData已经过时，只是为了兼容旧版本
+        this.__status = this.__status2 = status;
+        this.__cellStatus = [];
+        this.__rowid = rowid;
+        this.__data = new Array(len);
+        this.__cols = columnsindex;
+    }
+}
+
+
+// 该类定义一列的属性（列名/name，类型/type，默认值/defa）
+// order 排列序号
+// type:string,date,datetime,int,number
+class Column{
+    constructor(name, type, precision, defa){
+        this.name = name.toLowerCase();
+        this.dataType = type.toLowerCase();
+        this.precision = precision;
+        this.defa = defa;
+    }
+}
+
+
+class DataPage{
+    ado = null;
+    pages = 1;
+    pageRows = 0;
+    currentPage = 0;
+    refreshRows = 0;
+    constructor(ado, _pagerows, _page, _pages){
+        this.ado = ado;
+        this.pageRows = _pagerows;
+        this.changePage(_page, _pages);
+    }
+
+    changePage = (page, pages) => {
+        page = page <= 0 ? 0 : page;
+        this.currentPage = page;
+        this.pages = pages;
+    };
+
+    getPageRows = () => this.pageRows;
+
+    /**
+     *
+     * @param row
+     * @returns
+     */
+    getRowNum = (row) => {
+        let num = null;
+        if (this.ado.pageLoadReset || this.currentPage <= 0) {
+            num = this.currentPage * this.pageRows + row;
+        } else {
+            num = row;
+        }
+        return num;
+    };
+
+    getRealRow = (row) => {
+        let num = null;
+        if (this.ado.pageLoadReset || this.currentPage <= 0 || row < this.pageRows || this.pageRows <= 0) {
+            num = row;
+        } else {
+            num = row % this.pageRows;
+        }
+        return num;
+    };
+
+    getPageCount = () => this.pages;
+
+    getCurrentPage = () => this.currentPage;
+
+    getRefreshRows = () => this.refreshRows;
+
+    hasNextPage = () => this.pages > 1 && (this.currentPage < this.pages - 1);
+
+    release = () => {
+        this.ado = null;
+    }
+}
 
 class ADOAgent{
     dataPage = null;
@@ -36,6 +123,12 @@ class ADOAgent{
         this.reflectData=null;//{type:'refresh'/'edit',rows:[],clear:false/true,vars:{}};
     }
 
+    forActiveCell = (props, cell)=>{
+        cell.name = cell.name || props.name;
+        cell._mn = props._mn;
+        cell._amn = props._amn;
+    };
+
     init = ({columns, updateColumns, updateColumns, pageLoadReset, pageRows, page, pages}) => {
         if (columns) {
             columns.forEach((c1, index) => {
@@ -47,7 +140,7 @@ class ADOAgent{
         }
         this.editCols = updateColumns ? updateColumns.split(",") : [];
         this.pageLoadReset = getBoolean(pageLoadReset, true);
-        forActiveCell(props, this);
+        this.forActiveCell(props, this);
 
         // 实例化 dataPage
         this.dataPage = new DataPage(this, pageRows, page, pages);
@@ -483,7 +576,7 @@ class ADOAgent{
             let cln = this.columns[col];
             let v1 = rd.__data[col];
             if (value) {
-                value = $e.fn.parseValue(value, cln.dataType, cln.precision);
+                value = parseValue(value, cln.dataType, cln.precision);
             }
             if (v1 !== value) {
                 rd.__data[col] = value;
@@ -812,7 +905,7 @@ class ADOAgent{
                 convert: "1"
             };
             // 修改状态值为sync，
-            forActiveCell(this, prop);
+            this.forActiveCell(this, prop);
 
             let eData = [];
             // 主缓存区和过滤缓存区
@@ -938,101 +1031,12 @@ class ADOAgent{
     release = () => {
         this.reset(true);
         // 该函数未声明
-        $e.removeADO(this.getName(), this.getActiveModuleName());
+        // removeADO(this.getName(), this.getActiveModuleName());
         this.dataPage.release();
         this.dataPage = null;
     };
 
     toString = () => this.name;
-}
-
-
-
-// 该类定义一行的属性（而一行包含n列，其属性有：行的长度/length，状态标示/statusFlag，
-// 行的id/rowID---唯一标示该行的属性）
-class RowData{
-    __rownum = -1;
-    __row = -1;
-    constructor(len, status, rowid, columnsindex){
-        // 行数据(每一个元素就是一个DataColumn),变量rowData已经过时，只是为了兼容旧版本
-        this.__status = this.__status2 = status;
-        this.__cellStatus = [];
-        this.__rowid = rowid;
-        this.__data = new Array(len);
-        this.__cols = columnsindex;
-    }
-}
-
-
-// 该类定义一列的属性（列名/name，类型/type，默认值/defa）
-// order 排列序号
-// type:string,date,datetime,int,number
-class Column{
-    constructor(name, type, precision, defa){
-        this.name = name.toLowerCase();
-        this.dataType = type.toLowerCase();
-        this.precision = precision;
-        this.defa = defa;
-    }
-}
-
-
-class DataPage{
-    ado = null;
-    pages = 1;
-    pageRows = 0;
-    currentPage = 0;
-    refreshRows = 0;
-    constructor(ado, _pagerows, _page, _pages){
-        this.ado = ado;
-        this.pageRows = _pagerows;
-        this.changePage(_page, _pages);
-    }
-
-    changePage = (page, pages) => {
-        page = page <= 0 ? 0 : page;
-        this.currentPage = page;
-        this.pages = pages;
-    };
-
-    getPageRows = () => this.pageRows;
-
-    /**
-     *
-     * @param row
-     * @returns
-     */
-    getRowNum = (row) => {
-        let num = null;
-        if (this.ado.pageLoadReset || this.currentPage <= 0) {
-            num = this.currentPage * this.pageRows + row;
-        } else {
-            num = row;
-        }
-        return num;
-    };
-
-    getRealRow = (row) => {
-        let num = null;
-        if (this.ado.pageLoadReset || this.currentPage <= 0 || row < this.pageRows || this.pageRows <= 0) {
-            num = row;
-        } else {
-            num = row % this.pageRows;
-        }
-        return num;
-    };
-
-    getPageCount = () => this.pages;
-
-    getCurrentPage = () => this.currentPage;
-
-    getRefreshRows = () => this.refreshRows;
-
-    hasNextPage = () => this.pages > 1 && (this.currentPage < this.pages - 1);
-
-    release = () => {
-        this.ado = null;
-    }
 }
 
 
