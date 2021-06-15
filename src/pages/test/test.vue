@@ -18,7 +18,7 @@
 
 <script>
 
-    import Adapter from '../../utils/module/adapter';
+    import Adapter from '../../utils/adapter';
 
     import {isTypeOf, extend} from "../../utils/module/utils_module";
 
