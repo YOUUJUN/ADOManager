@@ -18,7 +18,7 @@
 
 <script>
 
-    import Adapter from '../../utils/module/adapter';
+    import Adapter from '../../utils/adapter';
 
     import {isTypeOf, extend} from "../../utils/module/utils_module";
 
@@ -91,11 +91,7 @@
                 };
 
 
-<<<<<<< HEAD
-                let result = extend(target, source, false, false);
-=======
                 let result = extend(target, source, false, true);
->>>>>>> 80c2ae1c7cba4f4f69040d6688ef55a924441347
 
                 console.log('result==>',result);
 

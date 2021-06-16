@@ -12,21 +12,11 @@ const errorCaptured = async (asyncFunc, ...params) =>{
 
 let request  = async (url) =>{
     function foo(data) {
-        let err={
-            code:10,
-            message:"ttttt"
-        }
-        return new Promise.reject(err)
-
-
-        //return data;
+        return data;
     }
 
-   let result = await myAxios({
-        transformResponse : [foo]
-    })
 
-
+    let [err, res] = await errorCaptured(myAxios, {transformResponse : [foo]});
 
     return result
 }
@@ -69,17 +59,6 @@ const myAxios =  async (options = {}) => {
 
 
     let $axios = axios.create(options);
-    try{
-        //console.log('params',params);
-        let res = await $axios(options);
-
-    }catch (e) {
-        return e;
-    }
-
-
-
-
 
 
     let [error,res] = await errorCaptured($axios, options);

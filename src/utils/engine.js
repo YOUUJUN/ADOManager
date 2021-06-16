@@ -1,3 +1,4 @@
+
 class ActiveModule {
     _amn = '';
     _adapter = null;
@@ -14,6 +15,7 @@ class ActiveModule {
         return this.ados[name];
     }
     addADO = (ado) => {
+        let name = ado.getName();
         name = this.engine.fn.convertName(name);
         if (!this.ados[name]) {
             this.ados[name] = ado;
@@ -661,7 +663,7 @@ class Engine {
     }
 
     createAdapter(vue, amn) {
-        let am = this.getActiveModule(amn, force);
+        let am = this.getActiveModule(amn, true);
         return am.createAdapter(vue);
     }
 
@@ -1037,15 +1039,8 @@ class Engine {
 let $e = new Engine();
 
 
-ActiveModule.hello()
+export default $e;
+
+export const fn = $e.fn;
 
 
-var foo = new ActiveModule;
-
-
-export function call() {
-
-}
-
-
-export default engine;

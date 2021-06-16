@@ -6,8 +6,9 @@ Vue.use(uView);
 
 import lodash from 'lodash';
 
-lodash.defaultsDeep();
+import $e from './utils/module/engine_module.js';
 
+Vue.prototype.$e = $e;
 
 
 //uuid
