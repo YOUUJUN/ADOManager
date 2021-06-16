@@ -30,9 +30,15 @@ class Engine {
             options.success = [this.initEnd, options.success];
         }
         if (!this._inited || (!this._checkid) || (checkid != this._checkid) || !am1) {
-            this.request(amn, "reg_am", act, null, null, options);
+            //this.request(amn, "reg_am", act, null, null, options);
+            return new Promise((resolve, reject) => {
+                this.request(amn, "reg_am", act, null, null, options, resolve, reject);  // , null, null, options
+            });
         } else if (act) {
-            this.request(amn, "call", act, null, null, options);
+            return new Promise((resolve, reject) => {
+                this.request(amn, "call", act, null, null, options, resolve, reject);  // , null, null, options
+            });
+            //this.request(amn, "call", act, null, null, options);
         }
     }
 
@@ -121,11 +127,17 @@ class Engine {
     }
     //type, name, ados, jsondata, options
     call = (amn, name, ados, jsondata, options) => {
-        return this.request(amn, "call", name, ados, jsondata, options);
+        //return this.request(amn, "call", name, ados, jsondata, options);
+        return new Promise((resolve, reject) => {
+            this.request(amn, "call", name, ados, jsondata, options, resolve, reject);  // , null, null, options
+        });
     }
 
     selfCall = (amn, name, ados, jsondata, options) => {
-        return this.request(amn, "async", name, ados, jsondata, options);
+        return new Promise((resolve, reject) => {
+            this.request(amn, "async", name, ados, jsondata, options, resolve, reject);  // , null, null, options
+        });
+        //return this.request(amn, "async", name, ados, jsondata, options);
     }
     buildData = (amn, ados, jsondata) => {
         let data = {};
@@ -270,7 +282,7 @@ class Engine {
         }
     }
 
-    request = (amn, type, name, adosname, jsondata, options) => {
+    request = (amn, type, name, adosname, jsondata, options, resolve, reject) => {
         // 获取需要同步的数据对象action, param, data
         amn = (amn || this._amgn);
         let data = this.buildData(amn, adosname, jsondata);
@@ -295,9 +307,9 @@ class Engine {
             fn.extend(options.params, settings, true);
         }
         options.error = options['error'] || this.defa_error;
-        return new Promise((resolve, reject) => {
+        // return new Promise((resolve, reject) => {
             this.ajax(settings, data, options, resolve, reject);  // , null, null, options
-        })
+        // })
     }
     //处理默认的系统消息
     defaultError = (err) => {
@@ -349,6 +361,8 @@ class Engine {
                 title: '请稍候...'
             })
         }, 100);
+        resolve=resolve||(()=>{});
+        reject=reject ||(()=>{});
         console.log('---------postData------' + JSON.stringify(postData))
 
         let setting = {
