@@ -484,7 +484,14 @@ export const os = {
     }
 };
 
-
+if (!Array.prototype.rangeCheck) {
+    Array.prototype.rangeCheck = function (i) {
+        if ((this.length > 0) && (i >= 0 && i < this.length)) {
+            return true;
+        }
+        return false;
+    };
+}
 
 
 

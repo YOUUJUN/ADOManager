@@ -500,15 +500,21 @@ class Adapter {
      * @param isclear
      */
     outData(ado, isclear) {
+        //console.log('--------outData-----' + this[adoname])
         //必须事先已经建立映射关系
-        let data = ado.getReflectData(!!isclear);
+        let data = ado.getReflectData();
         if (data) {
-            let rows0 = this.vue._data[this[adoname]['rows']];
+            let name = ado.getName();
+            let rows0 = this.vue.$data[this[name]['rows']];
             if (data.type == 'refresh') {
                 if (!!data.clear) {
                     rows0.splice(0, rows0.length);
                 }
-                rows0.push(data.rows);
+                data.rows.forEach((item) => {
+                    rows0.push(item)
+                })
+                // rows0 = rows0.concat(data.rows)
+                //rows0.splice(rows0.length,0,data.rows);
             } else {
                 let row = 0, rowid = -1, status = '0', rows = data.rows;
                 //ROW_ADD: '2',ROW_EDIT: '1',ROW_DELETE: '3'
@@ -545,7 +551,7 @@ class Adapter {
             let vars = data['vars'];
             if (vars) {
                 //vars 中的变量名是区分大小写的
-                let vars0 = this.vue._data[this[adoname]['vars']];
+                let vars0 = this.vue.$data[this[name]['vars']];
                 if (vars0) {
                     for (let i in vars) {
                         vars0[i] = vars[i];
@@ -557,13 +563,13 @@ class Adapter {
 
     inData(ado) {
         let cols = null;
-        let adoname = ado.getName();
-        if (this[adoname]['options']) {
-            cols = this[adoname]['options']['writeback'];
+        let name = ado.getName();
+        if (this[name]['options']) {
+            cols = this[name]['options']['writeback'];
         }
         if (cols !== 'none') {
             let row, idRows = ado.getRowIDMap();
-            let rows0 = this.vue._data[this[adoname]['rows']];
+            let rows0 = this.vue.$data[this[name]['rows']];
             for (let i = 0; i < rows0.length; i++) {
                 row = idRows(rows0[i].__rowid);
                 if (!cols) {
@@ -581,8 +587,8 @@ class Adapter {
      * 返回vue中使用的vars
      * @param adoname
      */
-    getVars(adoname) {
-        return this.vue._data[this[adoname]['vars']];
+    getVars(name) {
+        return this.vue.$data[this[name]['vars']];
     }
 
     release() {

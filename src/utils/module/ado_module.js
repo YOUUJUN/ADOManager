@@ -129,6 +129,14 @@ class ADOAgent{
         cell._amn = props._amn;
     };
 
+    getName = () =>{
+        return this.name
+    }
+
+    getActiveModuleName = () =>{
+        return this._amn;
+    }
+
     init = (props) => {
         const {columns, updateColumns, pageLoadReset, pageRows, page, pages} = props;
         if (columns) {
@@ -411,9 +419,11 @@ class ADOAgent{
     buildRowNum = () => {
         if (this.rows.length > 0) {
             let row = this.dataPage.getRowNum(0);
-
+            console.log('-------------------------' , this.rows.entries())
             for(let [index, row] of this.rows.entries()){
-                row.__rownum = row++;//__rownum是内部编号,不对外提供
+                console.log('---------------', index);
+                console.log('---------------', row);
+                row.__rownum = index++;//__rownum是内部编号,不对外提供
                 row.__row = index;
             }
 
