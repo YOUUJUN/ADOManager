@@ -8,7 +8,7 @@ class Engine {
     _amgn = null;
     _checkid = null;
     _lifeType = 'keep';
-    _baseURI = '';
+    _baseURI = '/api/';
     envs = {};
     am = null;
     ams = {};
@@ -23,12 +23,12 @@ class Engine {
         }
         let am1 = this.getActiveModule(amn);
         let act = options['_act'];
-        if (!options.success) {
-            options.success = this._inited;
-            options.context = this;
-        } else {
-            options.success = [this.initEnd, options.success];
-        }
+        // if (!options.success) {
+        //     options.success = this._inited;
+        //     options.context = this;
+        // } else {
+        //     options.success = [this.initEnd, options.success];
+        // }
         if (!this._inited || (!this._checkid) || (checkid != this._checkid) || !am1) {
             //this.request(amn, "reg_am", act, null, null, options);
             return new Promise((resolve, reject) => {
@@ -153,7 +153,7 @@ class Engine {
     getEditADOData = (amn, ados) => {
         let data = [];
         if (ados) {
-            let ado, names,adapter;
+            let ado, names, adapter;
             names = (ados instanceof Array) ? ados : ados.split(",");
             for (let i = 0; i < names.length; i++) {
                 // p = names[i].indexOf("/");
@@ -164,7 +164,7 @@ class Engine {
                 //     amn = _amn;
                 //     name = names[i];
                 // }
-                adapter=this.getAdapter(amn);
+                adapter = this.getAdapter(amn);
                 if (adapter) {
                     ado = this.getADO(names[i], amn);
                     if (ado) {
@@ -282,6 +282,11 @@ class Engine {
         }
     }
 
+
+    transParent = (options) => {
+
+    }
+
     request = (amn, type, name, adosname, jsondata, options, resolve, reject) => {
         // 获取需要同步的数据对象action, param, data
         amn = (amn || this._amgn);
@@ -308,7 +313,7 @@ class Engine {
         }
         options.error = options['error'] || this.defa_error;
         // return new Promise((resolve, reject) => {
-            this.ajax(settings, data, options, resolve, reject);  // , null, null, options
+        this.ajax(settings, data, options, resolve, reject);  // , null, null, options
         // })
     }
     //处理默认的系统消息
@@ -355,18 +360,18 @@ class Engine {
             clearTimeout(this.delayed);
             this.delayed = null;
         }
-        this.delayed = setTimeout(() => {
-            uni.showLoading({
-                mask: true,
-                title: '请稍候...'
-            })
-        }, 100);
-        resolve=resolve||(()=>{});
-        reject=reject ||(()=>{});
+        // this.delayed = setTimeout(() => {
+        //     uni.showLoading({
+        //         mask: true,
+        //         title: '请稍候...'
+        //     })
+        // }, 100);
+        // resolve=resolve||(()=>{});
+        // reject=reject ||(()=>{});
         console.log('---------postData------' + JSON.stringify(postData))
 
         let setting = {
-            url: ajaxUrl,
+            url: this.serialURL(ajaxUrl),
             data: postData,
             header: {
                 'content-type': 'application/json'
@@ -375,6 +380,7 @@ class Engine {
             dataType: 'json',
             responseType: "text",
             success: (res) => {
+                console.log('-------------success---------' + JSON.stringify(res));
                 if (res.statusCode === 200) {
                     console.log('ajax url==============================' + ajaxUrl + ', ------success---response---' + JSON.stringify(res.data));
                     try {
@@ -401,6 +407,7 @@ class Engine {
             },
 
             fail: (res) => {
+                console.log('-----------fail-----------' + JSON.stringify(res));
                 let msg = "";
                 switch (res.status) {
                     case 400:
@@ -458,6 +465,10 @@ class Engine {
         if (options) {
             fn.extend(options, setting, true, true);
         }
+
+
+        console.log('--------------------------------' + JSON.stringify(setting));
+
         uni.request(setting);
     }
 }
@@ -546,7 +557,7 @@ class Adapter {
 
     inData(ado) {
         let cols = null;
-        let adoname=ado.getName();
+        let adoname = ado.getName();
         if (this[adoname]['options']) {
             cols = this[adoname]['options']['writeback'];
         }
