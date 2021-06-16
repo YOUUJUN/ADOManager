@@ -129,7 +129,8 @@ class ADOAgent{
         cell._amn = props._amn;
     };
 
-    init = ({columns, updateColumns, pageLoadReset, pageRows, page, pages}) => {
+    init = (props) => {
+        const {columns, updateColumns, pageLoadReset, pageRows, page, pages} = props;
         if (columns) {
             columns.forEach((c1, index) => {
                 let column = new Column(c1.name, c1.dataType, c1.precision, c1.defaultValue);
