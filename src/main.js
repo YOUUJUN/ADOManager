@@ -9,24 +9,18 @@ import MinRouter from './MinRouter'
 import minRouter from './router'
 // 引入全局uView
 import uView from 'uview-ui';
-
 Vue.use(uView);
 
+
+
 Vue.config.productionTip = false
-
-import $e from './utils/module/engine_module.js';
-global.$e = $e;
-
 import mina from './components/min-a.vue'
 Vue.component('min-a', mina)
-
-// if (!Vue.prototype['$e']) {
-   Vue.prototype.$e = $e;
-// }
-
-
 // 注册路由
 Vue.use(MinRouter)
+
+import enginePlugin from './utils/module';
+Vue.use(enginePlugin);
 
 App.mpType = 'app'
 

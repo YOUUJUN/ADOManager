@@ -658,8 +658,4 @@ class ActiveModule {
     }
 }
 
-var $e = new Engine();
-
-$e.fn = fn;
-
-export default $e;
+export default Engine;

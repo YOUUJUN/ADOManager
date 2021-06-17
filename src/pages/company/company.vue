@@ -60,7 +60,7 @@
             getCompanyData() {
                 let that = this;
 
-                $e.init(that.groupName, that.moduleName, null, {
+                this.$e.init(that.groupName, that.moduleName, null, {
                     _act: this.action_refresh,
                 }).then(function (res) {
                     console.log('---------------companyList-------', that.companyList)

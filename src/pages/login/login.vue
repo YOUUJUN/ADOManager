@@ -19,6 +19,7 @@
 
     // const $e = require("@/yc-utils/engine_module.js");
 
+
     export default {
         data() {
             return {
@@ -76,11 +77,12 @@
 
         methods: {
             submit() {
+                console.log("this==>",this);
                 let vm = this;
                 this.$refs.uForm.validate(valid => {
                     if (valid) {
-                        console.log('-----------------------------------', $e);
-                        $e.init(this.groupName, this.moduleName, null, {
+                        console.log('-----------------------------------', this.$e);
+                        this.$e.init(this.groupName, this.moduleName, null, {
                             _act: this.action_login,
                             params: this.model
                         }).then(function (res) {
@@ -99,10 +101,26 @@
                                 // this.$cache.set('username', res['envs']['username'], 0);
 
                                 if (vm.$store.state.hasLogin) {
-                                    vm.$openPage({
-                                        name: 'index',
-                                        query: {}
-                                    })
+                                    // vm.$openPage({
+                                    //     name: 'index',
+                                    //     query: {}
+                                    // })
+
+
+                                    uni.navigateTo({
+                                        url: `/pages/index/index`,
+                                        animationType: 'slide-in-left',
+                                        animationDuration: 250,
+                                        success : res => {
+                                            res.eventChannel.emit('send',{
+                                                vueP : vm,
+                                                msg : vm.$e
+                                            });
+                                        },
+                                        fail : msg =>{
+                                            console.log('msg', msg);
+                                        }
+                                    });
                                 }
                             }
                             console.log('-----------res-----------' + JSON.stringify(res));

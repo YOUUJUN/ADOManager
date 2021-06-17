@@ -54,6 +54,16 @@
             }
         },
 
+        onLoad (){
+            let vm = this;
+            const eventChannel = this.getOpenerEventChannel();
+            eventChannel.on('send',(data) => {
+                console.log('if equal=============>',data.msg === vm.$e);
+                console.log('if equal Vue=============>',data.vueP === vm);
+            })
+
+        },
+
         computed: {
             // 计算属性的 getter
             menuGroupList() {
@@ -106,8 +116,9 @@
             },
 
             getMenuData() {
+                console.log("$e",this.$e);
                 let that = this;
-                let adapter = that.$e.getActiveModule(that.moduleName, true).createAdapter(this);
+                let adapter = that.$e.getActiveModule(this.moduleName, true).createAdapter(this);
                 adapter.mappingData(that.user_right_ado_name, "menuList");
 
                 that.$e.init(that.groupName, that.moduleName, null, {
