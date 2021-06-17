@@ -16,6 +16,10 @@ Vue.config.productionTip = false
 
 import $e from './utils/module/engine_module.js';
 global.$e = $e;
+
+import mina from './components/min-a.vue'
+Vue.component('min-a', mina)
+
 // if (!Vue.prototype['$e']) {
    Vue.prototype.$e = $e;
 // }
