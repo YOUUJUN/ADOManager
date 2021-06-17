@@ -19,7 +19,8 @@ class Engine {
         this._amgn = amgn;
         this._checkid = checkid || this._checkid;
         if (!this.am && amn == amgn) {
-            this.am = new ActiveModule(amgn, this);
+            this.am = new ActiveModule(amgn);
+            this.ams[amgn]=this.am;
         }
         let am1 = this.getActiveModule(amn);
         let act = options['_act'];
@@ -53,12 +54,12 @@ class Engine {
         cell._amn = props._amn;
     }
     getActiveModule = (name, force) => {
-        if (!name || name == this._amgn) {
-            return this.am;
-        }
+        // if (!name || name == this._amgn) {
+        //     return this.am;
+        // }
         let am1 = this.ams[name];
         if (!am1 && force) {
-            am1 = new ActiveModule(name, this);
+            am1 = new ActiveModule(name);
             this.ams[name] = am1;
         }
         return am1;
@@ -71,7 +72,7 @@ class Engine {
 
     getAdapter(amn) {
         let am = this.getActiveModule(amn);
-        return am == null ? null : am.getAdapter();
+        return am ?am.getAdapter():null;
     }
 
     createAdapter(vue, amn) {
@@ -268,9 +269,15 @@ class Engine {
                 }
             }
             if (ds) {
-                let adapter;
+                let adapter=null,am;
                 for (let i = 0; i < ds.length; i++) {
-                    adapter = this.getAdapter(ds[i].getActiveModuleName());
+                    am=this.getActiveModule(ds[i].getActiveModuleName());
+                    adapter = am.getAdapter();
+
+                    if (!adapter){
+                        adapter= this.getAdapter(ds[i].getActiveModuleName());
+                    }
+
                     if (adapter) {
                         adapter.outData(ds[i], true);
                     }
@@ -500,11 +507,14 @@ class Adapter {
      * @param isclear
      */
     outData(ado, isclear) {
-        //console.log('--------outData-----' + this[adoname])
+        console.log('--------outData-----', ado)
+
+
         //必须事先已经建立映射关系
         let data = ado.getReflectData();
         if (data) {
             let name = ado.getName();
+
             let rows0 = this.vue.$data[this[name]['rows']];
             if (data.type == 'refresh') {
                 if (!!data.clear) {
@@ -601,10 +611,14 @@ class Adapter {
 class ActiveModule {
     _amn = '';
     _adapter = null;
+    __rand=null;
 
     constructor(amn) {
         this._amn = amn;
         this.ados = {};
+
+        let today = new Date();
+        this.__rand=Math.abs(Math.sin(today.getTime()));
     }
 
     getADO = (name) => {
@@ -644,7 +658,7 @@ class ActiveModule {
     }
 }
 
-let $e = new Engine();
+var $e = new Engine();
 
 $e.fn = fn;
 

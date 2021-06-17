@@ -419,10 +419,10 @@ class ADOAgent{
     buildRowNum = () => {
         if (this.rows.length > 0) {
             let row = this.dataPage.getRowNum(0);
-            console.log('-------------------------' , this.rows.entries())
+            //console.log('-------------------------' , this.rows.entries())
             for(let [index, row] of this.rows.entries()){
-                console.log('---------------', index);
-                console.log('---------------', row);
+                //console.log('---------------', index);
+                //console.log('---------------', row);
                 row.__rownum = index++;//__rownum是内部编号,不对外提供
                 row.__row = index;
             }

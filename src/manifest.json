@@ -74,5 +74,27 @@
     },
     "mp-qq" : {
         "usingComponents" : true
-    }
+    },
+	"h5" : {
+	        "devServer" : {
+	            "disableHostCheck" : true, // 开启可以用自己的域名
+	            "proxy" : {
+	                "/api" : {
+	                    "target" : "http://erp.bfcgj.com/",
+	                    "changeOrigin" : true,
+	                    "secure" : false,
+	                    "pathRewrite" : {
+	                        "^/api" : "/"
+	                    }
+	                }
+	            },
+	            "https" : false
+	        },
+	        "domain" : "erp.bfcgj.com/h5/",
+	        "title" : "ycerp_mobile",
+	        "router" : {
+	            "mode" : "hash",
+	            "base" : "/h5/"
+	        }
+	    }
 }

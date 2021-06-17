@@ -1,30 +1,34 @@
 import Vue from 'vue'
+import store from './store'
 import App from './App'
-//uView
+
+
+// 引入MinRouter文件
+import MinRouter from './MinRouter'
+// 引入router文件
+import minRouter from './router'
+// 引入全局uView
 import uView from 'uview-ui';
+
 Vue.use(uView);
-
-import lodash from 'lodash';
-
-import $e from './utils/module/engine_module.js';
-
-Vue.prototype.$e = $e;
-
-
-//uuid
-import {v1 as uuidV1} from 'uuid';
-
-import utils from './utils';
 
 Vue.config.productionTip = false
 
-Vue.prototype.$db = utils.db;
+import $e from './utils/module/engine_module.js';
+// global.$e = $e;
+// if (!Vue.prototype['$e']) {
+   Vue.prototype.$e = $e;
+// }
 
-Vue.prototype.$uuid = uuidV1;
+
+// 注册路由
+Vue.use(MinRouter)
 
 App.mpType = 'app'
 
 const app = new Vue({
-  ...App
+    store,
+    ...App,
+    minRouter
 })
 app.$mount()

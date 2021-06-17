@@ -1,102 +1,44 @@
 <script>
-
     export default {
-	    data (){
-	        return {
-                netWork : 'none'
-            }
+        onLaunch: function () {
+            console.log('App Launch')
         },
-
-        onLaunch() {
-            uni.onTabBarMidButtonTap((options) => {
-                console.log('options');
-                setTimeout(()=>{
-                    uni.navigateTo({
-                        url: '/pages/post/post',
-                        animationType: 'slide-in-bottom',
-                        animationDuration: 250,
-                        success : result => {
-                            console.log('result', result);
-                        },
-                        fail : msg =>{
-                            console.log('msg', msg);
-                        }
-                    });
-                },0)
-            })
-
+       onLoad ( ) {
+            console.log('App Show')
         },
-
-        created(){
-            this.$db.closeDB('netless').catch(err=> {
-                console.log('数据库未打开')
-            }).finally(() => {
-                this.initDB();
-            })
-
-
-
-
-            this.$e.init();
-
-
-        },
-
-		onShow: function() {
-			console.log('App Show')
-		},
-		onHide: function() {
-			console.log('App Hide')
-		},
-
-
-        methods : {
-            getNetworkType(){
-                uni.getNetworkType({
-                    success : result => {
-                        this.netWork = result.networkType;
-                        console.log('net', result);
-                    }
-                })
-            },
-
-
-            async initDB(){
-                let isOpen = this.$db.isOpenDB('netless', '_doc/netless.db');
-
-                if(!isOpen){
-                    await this.$db.openComDB('netless', '_doc/netless.db');
-                    this.createTableCar();
-
-                    let result = await this.$db.isTableExit('netless', 'car');
-                    console.log('result',result);
-                }
-            },
-
-            createTableCar(){
-                this.$db.executeSQL('netless', this.$db.createTableCarSQL).then(result => {
-                    console.log('创建 car 表成功', result);
-                }).catch(err => {
-                    console.error('创建 car 表失败', err);
-                })
-            }
-
-
+        onHide: function () {
+            console.log('App Hide')
         }
-	}
-
+    }
 </script>
 
-
 <style lang="scss">
+    /* 注意要写在第一行，同时给style标签加入lang="scss"属性 */
     @import "uview-ui/index.scss";
-</style>
 
-<style>
+    .u-card {
+        margin: 10rpx !important;
+    }
 
-    /*@import "assets/uni.css";*/
+    .u-item-title {
+        position: relative;
+        font-size: 15px;
+        padding-left: 8px;
+        line-height: 1;
+        margin-bottom: 11px;
+        margin-top: 11px;
+    }
 
-    /*@import "./components/colorui/main.css";*/
-    /*@import "./components/colorui/icon.css";*/
-
+    .u-item-title:after {
+        position: absolute;
+        width: 4px;
+        top: -1px;
+        height: 16px;
+        /* #ifndef APP-NVUE */
+        content: '';
+        /* #endif */
+        left: 0;
+        border-radius: 10px;
+        background-color: #f29100;
+    }
 </style>
