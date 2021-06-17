@@ -76,28 +76,30 @@
 
         methods: {
             submit() {
-                let that = this;
+                let vm = this;
                 this.$refs.uForm.validate(valid => {
                     if (valid) {
                         console.log('-----------------------------------', $e);
-                        that.$e.init(that.groupName, that.moduleName, null, {
+                        $e.init(this.groupName, this.moduleName, null, {
                             _act: this.action_login,
                             params: this.model
                         }).then(function (res) {
+
                             if (res && res['envs']) {
+                                console.log('this',this);
                                 //修改store中登录状态
-                                that.$store.commit('login', res['envs']);
+                                vm.$store.commit('login', res['envs']);
                                 //缓存登录信息
-                                that.$cache.set('autoLoginInfo', {
-                                    userid: res['envs']['sid'],
-                                    pwd: res['envs']['result']
-                                }, 0);
+                                // this.$cache.set('autoLoginInfo', {
+                                //     userid: res['envs']['sid'],
+                                //     pwd: res['envs']['result']
+                                // }, 0);
 
                                 //保存用户名信息，用于显示
-                                that.$cache.set('username', res['envs']['username'], 0);
+                                // this.$cache.set('username', res['envs']['username'], 0);
 
-                                if (that.$store.state.hasLogin) {
-                                    that.$openPage({
+                                if (vm.$store.state.hasLogin) {
+                                    vm.$openPage({
                                         name: 'index',
                                         query: {}
                                     })

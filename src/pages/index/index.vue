@@ -16,13 +16,13 @@
             </view>
         </u-navbar>
         <view class="list-wrap">
-            <u-cell-group :title="item.name" v-for="(item, index) in menuGroupList" :key="index">
-                <u-cell-item @click="openPage(inner.path)" :title="inner.name"
-                             v-for="(inner, innerIndex) in item.children" :key="innerIndex" :icon="inner.icon"
-                             :arrow="arrow">
-                    <u-badge :absolute="false" v-if="inner.count" :count="inner.count" slot="right-icon"></u-badge>
-                </u-cell-item>
-            </u-cell-group>
+<!--            <u-cell-group :title="item.name" v-for="(item, index) in menuGroupList" :key="index">-->
+<!--                <u-cell-item @click="openPage(inner.path)" :title="inner.name"-->
+<!--                             v-for="(inner, innerIndex) in item.children" :key="innerIndex" :icon="inner.icon"-->
+<!--                             :arrow="arrow">-->
+<!--                    <u-badge :absolute="false" v-if="inner.count" :count="inner.count" slot="right-icon"></u-badge>-->
+<!--                </u-cell-item>-->
+<!--            </u-cell-group>-->
         </view>
     </view>
 </template>
@@ -88,7 +88,7 @@
                         list.push(newItem);
                     }
                 }
-                return util.composeTree(list);
+                // return util.composeTree(list);
             }
         },
 

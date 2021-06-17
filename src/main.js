@@ -15,7 +15,7 @@ Vue.use(uView);
 Vue.config.productionTip = false
 
 import $e from './utils/module/engine_module.js';
-// global.$e = $e;
+global.$e = $e;
 // if (!Vue.prototype['$e']) {
    Vue.prototype.$e = $e;
 // }

@@ -42,7 +42,7 @@
 
         onShow() {
             console.log('-----------------------onShow---------------------');
-            let adapter = $e.getActiveModule(this.moduleName, true).createAdapter(this);
+            let adapter = this.$e.getActiveModule(this.moduleName, true).createAdapter(this);
             adapter.mappingData(this.comp_ado_name, "companyList");
 
             this.getCompanyData();
