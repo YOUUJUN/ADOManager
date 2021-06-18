@@ -76,13 +76,13 @@
             },
 
             chooseCompany(rowid) {
-                let that = this;
-                util.request(that.action_login_company, util.callAction, {
+                console.log('this.$e====>',this.$e);
+                this.$e.call(this.action_login_company, this.callAction, {
                     params: {
                         rowid: rowid,
                     }
                 });
-                uni.navigateBack();
+                // uni.navigateBack();
             }
         }
     }

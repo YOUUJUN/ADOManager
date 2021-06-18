@@ -9,9 +9,10 @@ enginePlugin.install = function (Vue, options) {
 
     Vue.mixin({
         beforeCreate: function () {
-            Vue.prototype.$e  = new Engine();
-            Vue.prototype.$e.fn = fn;
-
+            if(!Vue.prototype.$e){
+                Vue.prototype.$e  = new Engine();
+                Vue.prototype.$e.fn = fn;
+            }
         }
     });
 }
