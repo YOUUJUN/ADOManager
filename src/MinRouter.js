@@ -68,6 +68,7 @@ function parseURL () {
 function install (Vue) {
 	Vue.mixin({
     beforeCreate: function () {
+    	console.log('===========>0');
 			if (!isDefault(this.$options.minRouter)) {
 				Vue._minRouter = this.$options.minRouter
 			}
