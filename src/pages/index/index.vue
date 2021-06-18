@@ -58,19 +58,20 @@
             this.$e = new this.$Engine();
         },
 
-        onLoad (){
-            let vm = this;
-            const eventChannel = this.getOpenerEventChannel();
-            eventChannel.on('send',(data) => {
-                console.log('if equal=============>',data.msg === vm.$e);
-                console.log('if equal Vue=============>',data.vueP === vm);
-            })
-
-        },
+        // onLoad (){
+        //     let vm = this;
+        //     const eventChannel = this.getOpenerEventChannel();
+        //     eventChannel.on('send',(data) => {
+        //         console.log('if equal=============>',data.msg === vm.$e);
+        //     })
+        //
+        // },
 
         computed: {
             // 计算属性的 getter
             menuGroupList() {
+                console.log('1', this.$e)
+
                 let list = [];
                 if (this.menuList && this.menuList.length > 0) {
                     for (let i = 0, len = this.menuList.length; i < len; i++) {
@@ -102,13 +103,10 @@
                         list.push(newItem);
                     }
                 }
-                return this.$e.fn.composeTree(list);
+                return this.composeTree(list);
             }
         },
 
-        // onLoad() {
-        //     this.getMenuData();
-        // },
 
         onShow() {
             this.getMenuData();
@@ -119,6 +117,31 @@
                 console.log('----------------submitAct------------------');
             },
 
+            composeTree: function (list = []) {
+                const data = JSON.parse(JSON.stringify(list)) // 浅拷贝不改变源数据
+                const result = []
+                if (!Array.isArray(data)) {
+                    return result
+                }
+                data.forEach(item => {
+                    delete item.children
+                })
+                const map = {}
+                data.forEach(item => {
+                    map[item.id] = item
+                })
+                data.forEach(item => {
+                    const parent = map[item.parentId]
+                    if (parent) {
+                        (parent.children || (parent.children = [])).push(item)
+                    } else {
+                        result.push(item)
+                    }
+                })
+                return result
+            },
+
+
             getMenuData() {
                 console.log("$e",this.$e);
                 let that = this;
@@ -128,6 +151,7 @@
                 that.$e.init(that.groupName, that.moduleName, null, {
                     _act: this.action_init,
                 }).then(function (res) {
+                    that.envs = that.$e.envs;
                     console.log('---------------getMenuData-------', that.menuList)
                 });
 
