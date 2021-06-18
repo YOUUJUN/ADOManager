@@ -13,6 +13,7 @@ class Engine {
     am = null;
     ams = {};
 
+    fn = fn;
     //初始化，外部驱动
     init = (amgn, amn, checkid, options = {}) => {
         amn = amn || amgn;
