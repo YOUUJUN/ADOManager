@@ -105,26 +105,26 @@
                                 // this.$cache.set('username', res['envs']['username'], 0);
 
                                 if (vm.$store.state.hasLogin) {
-                                    // vm.$openPage({
-                                    //     name: 'index',
-                                    //     query: {}
-                                    // })
+                                    vm.$openPage({
+                                        name: 'index',
+                                        query: {}
+                                    })
 
 
-                                    uni.navigateTo({
-                                        url: `/pages/index/index`,
-                                        animationType: 'slide-in-left',
-                                        animationDuration: 250,
-                                        success : res => {
-                                            res.eventChannel.emit('send',{
-                                                vueP : vm,
-                                                msg : vm.$e
-                                            });
-                                        },
-                                        fail : msg =>{
-                                            console.log('msg', msg);
-                                        }
-                                    });
+                                    // uni.navigateTo({
+                                    //     url: `/pages/index/index`,
+                                    //     animationType: 'slide-in-left',
+                                    //     animationDuration: 250,
+                                    //     success : res => {
+                                    //         res.eventChannel.emit('send',{
+                                    //             vueP : vm,
+                                    //             msg : vm.$e
+                                    //         });
+                                    //     },
+                                    //     fail : msg =>{
+                                    //         console.log('msg', msg);
+                                    //     }
+                                    // });
                                 }
                             }
                             console.log('-----------res-----------' + JSON.stringify(res));
