@@ -18,10 +18,10 @@ class Engine {
         amn = amn || amgn;
         this._amgn = amgn;
         this._checkid = checkid || this._checkid;
-        if (!this.am && amn == amgn) {
-            this.am = new ActiveModule(amgn);
-            this.ams[amgn]=this.am;
-        }
+        // if (!this.am && amn == amgn) {
+        //     this.am = new ActiveModule(amgn);
+        //     this.ams[amgn]=this.am;
+        // }
         let am1 = this.getActiveModule(amn);
         let act = options['_act'];
         // if (!options.success) {
