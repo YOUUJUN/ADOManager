@@ -19,8 +19,8 @@ Vue.component('min-a', mina)
 // 注册路由
 Vue.use(MinRouter)
 
-import enginePlugin from './utils/module';
-Vue.use(enginePlugin);
+import Engine from './utils/module/engine_module';
+Vue.prototype.$Engine = Engine;
 
 App.mpType = 'app'
 

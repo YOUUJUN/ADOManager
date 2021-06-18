@@ -38,7 +38,7 @@ function openPage (args) {
       isName = true
 		}
   })
-  
+
   if (!isName) {
     throw new Error(`没有${name}页面`)
   }

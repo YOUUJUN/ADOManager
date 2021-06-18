@@ -75,6 +75,10 @@
             this.$refs.uForm.setRules(this.rules);
         },
 
+        beforeCreate(){
+            this.$e = new this.$Engine();
+        },
+
         methods: {
             submit() {
                 console.log("this==>",this);

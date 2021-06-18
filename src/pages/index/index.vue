@@ -54,6 +54,10 @@
             }
         },
 
+        beforeCreate(){
+            this.$e = new this.$Engine();
+        },
+
         onLoad (){
             let vm = this;
             const eventChannel = this.getOpenerEventChannel();
@@ -126,6 +130,8 @@
                 }).then(function (res) {
                     console.log('---------------getMenuData-------', that.menuList)
                 });
+
+                this.$e.__hello = 0
 
                 // await util.initModule(that.groupName, that.moduleName, {
                 //     actionName: that.action_init,

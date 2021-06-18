@@ -40,12 +40,19 @@
             }
         },
 
+        beforeCreate(){
+            this.$e = new this.$Engine();
+        },
+
         onShow() {
             console.log('-----------------------onShow---------------------');
-            let adapter = this.$e.getActiveModule(this.moduleName, true).createAdapter(this);
+            console.log('this.$e===>1',this.$e);
+            let adapter = this.$e.getActiveModule(this.moduleName, true).createAdapter(this, true);
             adapter.mappingData(this.comp_ado_name, "companyList");
+            console.log('this.$e===>2',this.$e);
 
             this.getCompanyData();
+            console.log('this.$e===>3',this.$e);
         },
 
         // onLoad() {
@@ -63,6 +70,7 @@
                 this.$e.init(that.groupName, that.moduleName, null, {
                     _act: this.action_refresh,
                 }).then(function (res) {
+                    console.log('get in to refresh ===========>vue',that);
                     console.log('---------------companyList-------', that.companyList)
                 });
 

@@ -516,13 +516,19 @@ class Adapter {
             let name = ado.getName();
 
             let rows0 = this.vue.$data[this[name]['rows']];
+            console.log('get in to refresh ===========>refresh',data.type);
             if (data.type == 'refresh') {
+                console.log('get in to refresh ===========>');
                 if (!!data.clear) {
                     rows0.splice(0, rows0.length);
                 }
                 data.rows.forEach((item) => {
                     rows0.push(item)
                 })
+                this.vue.__hello = 1;
+
+                console.log('get in to refresh ===========>rows0',rows0);
+
                 // rows0 = rows0.concat(data.rows)
                 //rows0.splice(rows0.length,0,data.rows);
             } else {
