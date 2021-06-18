@@ -16,13 +16,13 @@
             </view>
         </u-navbar>
         <view class="list-wrap">
-<!--            <u-cell-group :title="item.name" v-for="(item, index) in menuGroupList" :key="index">-->
-<!--                <u-cell-item @click="openPage(inner.path)" :title="inner.name"-->
-<!--                             v-for="(inner, innerIndex) in item.children" :key="innerIndex" :icon="inner.icon"-->
-<!--                             :arrow="arrow">-->
-<!--                    <u-badge :absolute="false" v-if="inner.count" :count="inner.count" slot="right-icon"></u-badge>-->
-<!--                </u-cell-item>-->
-<!--            </u-cell-group>-->
+            <u-cell-group :title="item.name" v-for="(item, index) in menuGroupList" :key="index">
+                <u-cell-item @click="openPage(inner.path)" :title="inner.name"
+                             v-for="(inner, innerIndex) in item.children" :key="innerIndex" :icon="inner.icon"
+                             :arrow="arrow">
+                    <u-badge :absolute="false" v-if="inner.count" :count="inner.count" slot="right-icon"></u-badge>
+                </u-cell-item>
+            </u-cell-group>
         </view>
     </view>
 </template>
@@ -102,7 +102,7 @@
                         list.push(newItem);
                     }
                 }
-                // return util.composeTree(list);
+                return this.$e.fn.composeTree(list);
             }
         },
 
@@ -131,7 +131,7 @@
                     console.log('---------------getMenuData-------', that.menuList)
                 });
 
-                this.$e.__hello = 0
+                //this.$e.__hello = 0
 
                 // await util.initModule(that.groupName, that.moduleName, {
                 //     actionName: that.action_init,

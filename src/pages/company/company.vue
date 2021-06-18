@@ -84,13 +84,14 @@
             },
 
             chooseCompany(rowid) {
-                console.log('this.$e====>',this.$e);
-                this.$e.call(this.action_login_company, this.callAction, {
+                console.log('this.$e====>', this.$e);
+                // amn, name, ados, jsondata, options
+                this.$e.call(this.moduleName, this.action_login_company, null, null, {
                     params: {
                         rowid: rowid,
                     }
                 });
-                // uni.navigateBack();
+                uni.navigateBack();
             }
         }
     }
