@@ -18,6 +18,19 @@ const router = new MinRouter({
         {
             path: 'pages/company/company',
             name: 'company'
+        },
+        {
+            path: 'pages/phone_inner_input_desk/desk',
+            name: 'phone_car_input_inner_desk'
+        },
+        {
+            path: 'pages/phone_inner_input_desk/bill/bill',
+            name: 'phone_car_input_inner_desk_bill'
+        },
+
+        {
+            path: 'pages/phone_inner_input_desk/micro_bill/micro_bill',
+            name: 'phone_car_input_inner_desk_micro_bill'
         }
     ]
 })

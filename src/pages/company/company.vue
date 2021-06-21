@@ -44,29 +44,28 @@
             this.$e = new this.$Engine();
         },
 
-        onShow() {
-            console.log('-----------------------onShow---------------------');
-            console.log('this.$e===>1',this.$e);
-            let adapter = this.$e.getActiveModule(this.moduleName, true).createAdapter(this, true);
-            adapter.mappingData(this.comp_ado_name, "companyList");
-            console.log('this.$e===>2',this.$e);
-
-            this.getCompanyData();
-            console.log('this.$e===>3',this.$e);
-        },
-
-        // onLoad() {
-        //
-        //     let adapter = this.$e.getActiveModule(this.moduleName, true).createAdapter(this, this.moduleName);
+        // onShow() {
+        //     console.log('-----------------------onShow---------------------');
+        //     console.log('this.$e===>1',this.$e);
+        //     let adapter = this.$e.getActiveModule(this.moduleName, true).createAdapter(this, true);
         //     adapter.mappingData(this.comp_ado_name, "companyList");
+        //     console.log('this.$e===>2',this.$e);
         //
         //     this.getCompanyData();
+        //     console.log('this.$e===>3',this.$e);
         // },
+
+        onLoad() {
+
+            let adapter = this.$e.getActiveModule(this.moduleName, true).createAdapter(this, true);
+            adapter.mappingData(this.comp_ado_name, "companyList");
+
+            this.getCompanyData();
+        },
 
         methods: {
             getCompanyData() {
                 let that = this;
-
                 this.$e.init(that.groupName, that.moduleName, null, {
                     _act: this.action_refresh,
                 }).then(function (res) {

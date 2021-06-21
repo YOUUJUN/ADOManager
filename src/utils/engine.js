@@ -654,7 +654,7 @@ class Engine {
     getADO = (name, amn) => {
         name = this.fn.convertName(name);
         let am = this.getActiveModule(amn || this._amgn);
-        return am ? am.getADO(name) : null;
+        return am ? am.getADO(name, this) : null;
     }
 
     getAdapter(amn) {

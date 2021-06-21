@@ -34,6 +34,27 @@
         "navigationBarTitleText": "公司列表",
         "enablePullDownRefresh": false
       }
+    }, {
+      "path": "pages/phone_inner_input_desk/desk",
+      "style": {
+        "navigationBarTitleText": "内勤回收列表",
+        "navigationStyle": "custom",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/phone_inner_input_desk/bill/bill",
+      "style": {
+        "navigationBarTitleText": "内勤回收车辆",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
+      "path": "pages/phone_inner_input_desk/micro_bill/micro_bill",
+      "style": {
+        "navigationBarTitleText": "内勤回收快速录入",
+        "enablePullDownRefresh": false
+      }
     }
   ],
   "globalStyle": {
