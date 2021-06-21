@@ -1083,7 +1083,10 @@ class Engine {
     init = (amgn, amn, checkid, options = {}) => {
         amn = amn || amgn;
         this._amgn = amgn;
-        this._checkid = checkid || this._checkid;
+        if (checkid) {
+            this._checkid = checkid;
+        }
+
         // if (!this.am && amn == amgn) {
         //     this.am = new ActiveModule(amgn);
         //     this.ams[amgn]=this.am;

@@ -32,7 +32,7 @@
                                  @click="tc_cp_nameSheetShow = true"></u-input>
                     </u-form-item>
                 </u-form>
-                <u-select mode="single-column" v-if="listData['empl_name']"
+                <!--<u-select mode="single-column" v-if="listData['empl_name']"
                           :default-value="[empl_nameSelectindex]"
                           :list="listData['empl_name']"
                           v-model="empl_nameSheetShow"
@@ -54,7 +54,7 @@
                           :default-value="[tc_cp_nameSelectindex]"
                           :list="listData['tc_cp_name']"
                           v-model="tc_cp_nameSheetShow"
-                          @confirm="selectTcCpNameConfirm"></u-select>
+                          @confirm="selectTcCpNameConfirm"></u-select>-->
             </view>
         </view>
 
@@ -113,28 +113,28 @@
 
                 </u-form>
 
-                <u-select mode="single-column" :list="cancel_flagSelectList"
-                          :default-value="[cancel_flagSelectindex]"
-                          v-model="cancel_flagSheetShow"
-                          @confirm="selectCancelFlagConfirm"></u-select>
+                <!-- <u-select mode="single-column" :list="cancel_flagSelectList"
+                           :default-value="[cancel_flagSelectindex]"
+                           v-model="cancel_flagSheetShow"
+                           @confirm="selectCancelFlagConfirm"></u-select>
 
-                <u-select mode="single-column" v-if="listData['car_kind']"
-                          :default-value="[car_kindSelectindex]"
-                          :list="listData['car_kind']"
-                          v-model="car_kindSheetShow"
-                          @confirm="selectCarKindConfirm"></u-select>
+                 <u-select mode="single-column" v-if="listData['car_kind']"
+                           :default-value="[car_kindSelectindex]"
+                           :list="listData['car_kind']"
+                           v-model="car_kindSheetShow"
+                           @confirm="selectCarKindConfirm"></u-select>
 
-                <u-select mode="single-column" v-if="listData['car_no_type']"
-                          :default-value="[car_no_typeSelectindex]"
-                          :list="listData['car_no_type']"
-                          v-model="car_no_typeSheetShow"
-                          @confirm="selectCarNoTypeConfirm"></u-select>
+                 <u-select mode="single-column" v-if="listData['car_no_type']"
+                           :default-value="[car_no_typeSelectindex]"
+                           :list="listData['car_no_type']"
+                           v-model="car_no_typeSheetShow"
+                           @confirm="selectCarNoTypeConfirm"></u-select>
 
-                <u-select mode="single-column" v-if="listData['fuel_name']"
-                          :default-value="[fuel_nameSelectindex]"
-                          :list="listData['fuel_name']"
-                          v-model="fuel_nameSheetShow"
-                          @confirm="selectFuelNameConfirm"></u-select>
+                 <u-select mode="single-column" v-if="listData['fuel_name']"
+                           :default-value="[fuel_nameSelectindex]"
+                           :list="listData['fuel_name']"
+                           v-model="fuel_nameSheetShow"
+                           @confirm="selectFuelNameConfirm"></u-select>-->
 
             </view>
         </view>
@@ -222,7 +222,7 @@
                     </u-form-item>
                 </u-form>
 
-                <u-select mode="single-column" :list="is_yjSelectList"
+                <!--<u-select mode="single-column" :list="is_yjSelectList"
                           :default-value="[is_yjSelectindex]"
                           v-model="is_yjSheetShow"
                           @confirm="selectIsYjConfirm"></u-select>
@@ -235,35 +235,14 @@
                 <u-select mode="single-column" :list="is_lzgqSelectList"
                           :default-value="[is_lzgqSelectindex]"
                           v-model="is_lzgqSheetShow"
-                          @confirm="selectIsLzgqConfirm"></u-select>
+                          @confirm="selectIsLzgqConfirm"></u-select>-->
 
-                <!--<u-select mode="single-column" v-if="listData['empl_name']"
-                          :default-value="[empl_nameSelectindex]"
-                          :list="listData['empl_name']"
-                          v-model="empl_nameSheetShow"
-                          @confirm="selectEmplNameConfirm"></u-select>
-
-                <u-select mode="single-column" v-if="listData['car_reclaim_way']"
-                          :default-value="[car_reclaim_waySelectindex]"
-                          :list="listData['car_reclaim_way']"
-                          v-model="car_reclaim_waySheetShow"
-                          @confirm="selectCarReclaimWayConfirm"></u-select>
-
-                <u-select mode="single-column" v-if="listData['backtypename']"
-                          :default-value="[backtypenameSelectindex]"
-                          :list="listData['backtypename']"
-                          v-model="backtypenameSheetShow"
-                          @confirm="selectBacktypenameConfirm"></u-select>
-
-                <u-select mode="single-column" v-if="listData['tc_cp_name']"
-                          :default-value="[tc_cp_nameSelectindex]"
-                          :list="listData['tc_cp_name']"
-                          v-model="tc_cp_nameSheetShow"
-                          @confirm="selectTcCpNameConfirm"></u-select>-->
 
             </view>
         </view>
-
+        <view class="u-m-t-20 u-p-20 ">
+            <view class="u-item-title">车辆图片</view>
+        </view>
         <view class="image-list">
             <u-upload
                     ref="swbUpload"
@@ -379,13 +358,21 @@
                 //环境变量
                 envs: null,
                 //下拉列表数据
-                listData: null,
+                viewData: {
+                    is_lzgqSelectList: [{
+                        label: '铁质',
+                        value: '0'
+                    }, {
+                        label: '铝质',
+                        value: '1'
+                    }],
+                },
 
                 //单据对象
-                car_m: null,
+                car_m: [],
                 car_m_ado_name: 'car_m',
                 //图片信息
-                car_d: null,
+                car_d: [],
                 car_d_ado_name: 'car_d',
 
                 page_first_action: '',
@@ -398,11 +385,13 @@
                 swbImgList: [],
                 swbImgshowProgress: false,
 
-                action_bill_submit:'Save'
+                action_bill_submit: 'Save',
+
+                checkid: ''
             }
         },
 
-        beforeCreate(){
+        beforeCreate() {
             this.$e = new this.$Engine();
         },
 
@@ -418,12 +407,14 @@
             var urlParams = this.$parseURL();
             if (urlParams.actionName) {
                 this.page_first_action = urlParams['actionName'];
+                this.checkid = urlParams['checkid'];
             }
 
             let adapter = this.$e.getActiveModule(this.moduleName, true).createAdapter(this, true);
             adapter.mappingData(this.car_d_ado_name, "car_d");
             adapter.mappingData(this.car_m_ado_name, "car_m");
 
+            // adapter.mappingData(this.car_m_ado_name, "viewData");
             this.getListData();
         },
 
@@ -744,11 +735,12 @@
 
             getListData: function () {
                 let that = this;
-                this.$e.init(that.groupName, that.moduleName, null, {
+                this.$e.init(that.groupName, that.moduleName, that.checkid, {
                     _act: this.page_first_action,
                 }).then(function (res) {
-                    //console.log('get in to refresh ===========>vue',that);
-                    //console.log('---------------companyList-------', that.companyList)
+                    //that.listData =
+                    console.log('get in to refresh ======car_m=====>vue', that.car_m);
+                    console.log('get in to refresh ======car_d=====>vue', that.car_d);
                 });
 
                 // util.initModule(that.groupName, that.moduleName, {
@@ -813,14 +805,14 @@
     }
 
     .bottom-bar {
-        margin-top: 20rpx;
-        padding: 20rpx;
+        margin-top: 20 rpx;
+        padding: 20 rpx;
         background-color: #ffffff;
     }
 
     .image-list {
-        margin-top: 20rpx;
-        padding: 20rpx;
+        margin-top: 20 rpx;
+        padding: 20 rpx;
         background-color: #ffffff;
     }
 </style>

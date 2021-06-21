@@ -196,7 +196,7 @@
             }
         },
 
-        beforeCreate(){
+        beforeCreate() {
             this.$e = new this.$Engine();
         },
 
@@ -239,7 +239,7 @@
             getData() {
                 let that = this;
                 this.$e.init(that.groupName, that.moduleName).then(function (res) {
-                    console.log('get in to refresh ===========>vue',that);
+                    console.log('get in to refresh ===========>vue', that);
                     console.log('---------------companyList-------', that.companyList)
                 });
                 // util.initModule(that.groupName, that.moduleName).then(function (res) {
@@ -296,12 +296,12 @@
                 let that = this;
                 var adoName = (that.current == 1) ? that.data_done_ado_name : that.data_list_ado_name;
 
-                var ado =  that.$e.getADO(adoName, that.moduleName);
+                var ado = that.$e.getADO(adoName, that.moduleName);
                 console.log('-------------1-------', ado)
                 console.log('-------------2--------', ado.getDataPage())
                 if (ado.hasNextPage()) {
                     ado.nextPage();
-                }else{
+                } else {
                     this.showTips('没有更多数据了')
                 }
 
@@ -355,7 +355,8 @@
                     that.$openPage({
                         name: that.groupName + '_micro_bill',
                         query: {
-                            actionName: 'Add'
+                            actionName: 'Add',
+                            checkid: that.$e._checkid
                         }
                     });
                 });
@@ -407,8 +408,8 @@
     }
 
     .map-wrap-text {
-        font-size: 32rpx;
+        font-size: 32 rpx;
         font-weight: 700;
-        padding-right: 6rpx;
+        padding-right: 6 rpx;
     }
 </style>
