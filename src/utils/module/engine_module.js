@@ -1856,8 +1856,8 @@ class ActiveModule {
     inData(ado) {
         let cols = null;
         let name = ado.getName();
-        if (this[name]['options']) {
-            cols = this[name]['options']['writeback'];
+        if (this.mapping[name]['options']) {
+            cols = this.mapping[name]['options']['writeback'];
         }
         if (cols !== 'none') {
             let row, idRows = ado.getRowIDMap();

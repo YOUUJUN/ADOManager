@@ -31,6 +31,13 @@
                                  v-model="tc_cp_nameLabel" placeholder="请选择拖车公司"
                                  @click="tc_cp_nameSheetShow = true"></u-input>
                     </u-form-item>
+
+                    <u-form-item label-width="180"
+                                 :label-position="labelPosition" label="所属区域" prop="city_code">
+                        <u-input :border="border" type="select" :select-open="city_codeSheetShow"
+                                 v-model="city_codeLabel" placeholder="请选择所属区域"
+                                 @click="city_codeSheetShow = true"></u-input>
+                    </u-form-item>
                 </u-form>
                 <u-select mode="single-column" v-if="listData['empl_name']"
                           :default-value="[empl_nameSelectindex]"
@@ -55,6 +62,11 @@
                           :list="listData['tc_cp_name']"
                           v-model="tc_cp_nameSheetShow"
                           @confirm="selectTcCpNameConfirm"></u-select>
+                <u-select mode="single-column" v-if="listData['city_code']"
+                          :default-value="[city_codeSelectindex]"
+                          :list="listData['city_code']"
+                          v-model="city_codeSheetShow"
+                          @confirm="selectCityCodeConfirm"></u-select>
             </view>
         </view>
 
@@ -276,6 +288,11 @@
                 moduleName: 'phone_car_input_inner_bill',
 
 
+                city_codeSheetShow: false,
+                city_codeSelectindex: 0,
+                city_codeLabel: '',
+
+
                 empl_nameSheetShow: false,
                 empl_nameSelectindex: '',
                 empl_nameLabel: '',
@@ -361,7 +378,7 @@
 
 
                 //单据对象
-                car_m_array:[],
+                car_m_array: [],
                 car_m: null,
                 car_m_ado_name: 'car_m',
                 //图片信息
@@ -454,6 +471,16 @@
             },
 
 
+            selectCityCodeConfirm(e) {
+                e.map((val, index) => {
+                    this.city_codeLabel = val.label;
+                    this.car_m.city_code = val.value;
+                    this.city_codeSelectindex = this.listData['city_code'].findIndex(function (el) {
+                        return (el.value === val.value && el.label === val.label);
+                    });
+                })
+            },
+
             selectCancelFlagConfirm(e) {
                 e.map((val, index) => {
                     this.cancel_flagLabel = val.label;
@@ -496,6 +523,7 @@
             },
 
             selectEmplNameConfirm(e) {
+                console.log('-------selectEmplNameConfirm------');
                 e.map((val, index) => {
                     this.empl_nameLabel = val.label;
                     this.car_m.empl_name = val.value;
@@ -718,6 +746,15 @@
 
             submitBill() {
                 let that = this;
+                this.$e.call(this.moduleName, this.action_bill_submit, this.car_m_ado_name + ', ' + this.car_d_ado_name, {}, {}).then(function (res) {
+
+                });
+
+                // this.$e.init(that.groupName, that.moduleName, that.checkid, (that.action_bill_submit, util.callAction, {}, util.diff_data).then(function (res) {
+                //     // that.getListData(res);
+                //     uni.navigateBack();
+                //     console.log('------------save--------------' + JSON.stringify(res));
+                // });
                 // util.build_diff_data(that.moduleName, that.car_m_ado_name, [that.car_m]);
                 // //util.build_diff_data(that.moduleName, that.car_verify_item_ado_name, that.car_verify_item);
                 // util.request(that.action_bill_submit, util.callAction, {}, util.diff_data).then(function (res) {
@@ -735,7 +772,7 @@
                     that.car_m = that.car_m_array[0];
                     //that.listData =
                     //console.log('get in to refresh ======car_m=====>vue', that.car_m);
-                    //console.log('get in to refresh ======car_d=====>vue', that.car_d);
+                    console.log('get in to refresh ======car_d=====>vue', that.listData);
                 });
 
                 // util.initModule(that.groupName, that.moduleName, {
@@ -800,14 +837,14 @@
     }
 
     .bottom-bar {
-        margin-top: 20 rpx;
-        padding: 20 rpx;
+        margin-top: 20rpx;
+        padding: 20rpx;
         background-color: #ffffff;
     }
 
     .image-list {
-        margin-top: 20 rpx;
-        padding: 20 rpx;
+        margin-top: 20rpx;
+        padding: 20rpx;
         background-color: #ffffff;
     }
 </style>
