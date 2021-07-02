@@ -1362,11 +1362,11 @@ class Engine {
                     am = this.getActiveModule(amn);
                     if (am) {
                         for (var vn in vs) {
-                            if (am.getADO(vn)) {
+                            // if (am.getADO(vn)) {
                                 am.changeViewProperty(vn, vs[vn]['_child_or'] ? vs[vn]['_child_or'] : vs[vn]);
-                            } else {
+                            // } else {
                                 //transParent
-                            }
+                            // }
                         }
                     }
                 }
@@ -1695,12 +1695,14 @@ class ActiveModule {
     context = null;//engine
     ados = null;
     mapping = null;
+    view=null;
 
     constructor(amn, context) {
         this._amn = amn;
         this.ados = {};
         this.context = context;
         this.mapping = {};
+        this.view={};//视图名到数据对象的映射
     }
 
     /**
@@ -1709,20 +1711,34 @@ class ActiveModule {
      * @param rows 数据行名
      * @param vars 数据对象变量名
      */
-    mappingData(name, rows, vars) {
-        this.mapping[fn.convertName(name)] = {rows: rows, vars: vars || ''};
+    mappingData(name, rows, vars,options) {
+        name=fn.convertName(name);
+        this.mapping[name] = {rows: rows, vars: vars || ''};
+        if (options && options['view']){
+            this.view[fn.convertName(options['view'])]=name;
+        }
     }
 
     getADO = (name) => {
         name = fn.convertName(name);
         return this.ados[name];
     }
+
+    /**
+     * 增加数据对象，如果没有在adapter中配置，则忽略且返回 false
+     * @param ado
+     * @returns {boolean}
+     */
     addADO = (ado) => {
         let name = ado.getName();
         name = fn.convertName(name);
-        if (!this.ados[name]) {
-            this.ados[name] = ado;
+        if (this.mapping[name]) {
+            if (!this.ados[name]) {
+                this.ados[name] = ado;
+            }
+            return true;
         }
+        return false;
     }
 
     /**
@@ -1730,27 +1746,34 @@ class ActiveModule {
      * @param name view的name
      * @param options
      */
-    changeViewProperty(name, options) {
+    changeViewProperty(viewname, options) {
         let text = null, value = null;
-        name = fn.convertName(name);
-        let ado = this.getADO(name);
-        let map = this.mapping[name];
-        if (map) {
-            let vars = this.context.vue.$data[map['vars']];
-            if (ado && vars) {
-                for (let k in options) {
-                    if (k.startsWith("/")) {
-                        text = options[k]['listData'];
-                        //要判断text是否为plainObject
-                        value = {};
-                        if (text) {
-                            value = this.context.parseListData(text);
+        viewname = fn.convertName(viewname);
+        let name=this.view[viewname];
+        if (name) {
+            //通过视图名找数据对象
+            let map = this.mapping[name];
+            if (map) {
+                //存在数据对象的定义
+                let vars = this.context.vue.$data[map['vars']];
+                let ado = this.getADO(name);
+                if (ado && vars) {
+                    for (let k in options) {
+                        if (k.startsWith("/")) {
+                            text = options[k]['listData'];
+                            //要判断text是否为plainObject
+                            value = {};
+                            if (text) {
+                                value = this.context.parseListData(text);
+                            }
+                            vars[this.context.fn.convertName(k.substring(1))] = value;
                         }
-                        vars[this.context.fn.convertName(k.substring(1))] = value;
                     }
+                    return true;
                 }
             }
         }
+        return false;
     };
 
 

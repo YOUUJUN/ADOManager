@@ -109,7 +109,6 @@
 
         onLoad() {
             this.$e = new this.$Engine(this);
-            //this.getCompanyData();
         },
 
         onShow() {
@@ -117,10 +116,6 @@
         },
 
         methods: {
-            submitAct() {
-                console.log('----------------submitAct------------------');
-            },
-
             composeTree: function (list = []) {
                 const data = JSON.parse(JSON.stringify(list)) // 浅拷贝不改变源数据
                 const result = []
@@ -147,11 +142,7 @@
 
 
             getMenuData() {
-                console.log("$e",this.$e);
                 let that = this;
-                // let adapter = that.$e.getActiveModule(this.moduleName, true).createAdapter(this);
-                // adapter.mappingData(that.user_right_ado_name, "menuList");
-
                 that.$e.init(that.groupName, that.moduleName, null, {
                     _act: this.action_init,
                 }).then(function (res) {
