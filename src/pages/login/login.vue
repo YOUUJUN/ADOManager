@@ -91,23 +91,15 @@
                             _act: this.action_login,
                             params: this.model
                         }).then(function (res) {
-
                             console.log('-----------res-----------' + JSON.stringify(vm.$e.envs));
-
                             if (vm.$e.envs) {
-
                                 //vm.$store.commit('login', res['envs']);
-
                                 vm.$openPage({
                                     name: 'index',
                                     query: {}
                                 })
-
                             }
-
                         });
-
-
                         console.log('验证通过');
                     } else {
                         console.log('验证失败');

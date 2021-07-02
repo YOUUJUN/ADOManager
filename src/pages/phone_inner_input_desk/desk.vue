@@ -193,17 +193,26 @@
 
                 action_bill_add: 'bill.Add',
                 action_filter: 'filter.Refresh',
+
+
+                adapter:{
+                    phone_car_input_inner_desk:{
+                        ados:{
+                            data_done:{rows:'data_done_data',vars: '',options:{}},
+                            data_list:{rows:'data_list_data',vars: '',options:{}}
+                        },
+                        group:true
+                    }
+                }
             }
         },
 
-        beforeCreate() {
-            this.$e = new this.$Engine();
-        },
+        // beforeCreate() {
+        //
+        // },
 
         onLoad() {
-            let adapter = this.$e.getActiveModule(this.moduleName, true).createAdapter(this, true);
-            adapter.mappingData(this.data_list_ado_name, "data_list_data");
-            adapter.mappingData(this.data_done_ado_name, "data_done_data");
+            this.$e = new this.$Engine(this);
 
             this.getData();
         },
@@ -306,24 +315,6 @@
                 }
 
 
-                // if ((ado.currentPage + 1) < ado.totalSize) {
-                //     $e.getADO()
-                //     // util.request(ado.dbname, util.pageAction, {
-                //     //     params: {
-                //     //         page: ++ado.currentPage
-                //     //     }
-                //     // }).then(function (res) {
-                //     //     if (res && res.data) {
-                //     //         if (that.current == 1) {
-                //     //             that.data_done_data = that.data_done_data.concat(res.data[0].rows);
-                //     //         } else {
-                //     //             that.data_list_data = that.data_list_data.concat(res.data[0].rows);
-                //     //         }
-                //     //     }
-                //     // });
-                // } else {
-                //     this.showTips('没有更多数据了')
-                // }
             },
 
             chooseBill(rowid) {

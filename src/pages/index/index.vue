@@ -40,8 +40,8 @@
                 arrow: true,
                 useSlot: true,
 
-                // groupName: 'phone_app',
-                // moduleName: 'phone_app',
+                groupName: 'phone_app',
+                moduleName: 'phone_app',
                 action_init: 'InitRight',
 
 

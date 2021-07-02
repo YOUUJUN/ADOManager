@@ -2,8 +2,8 @@
     <view class="wrap">
         <view class="u-m-t-20 u-p-20 page-top-view">
             <view class="u-item-title">回收信息</view>
-            <view v-if="car_m">
-                <u-form :model="car_m" ref="uForm" :errorType="errorType" class="car-m-info">
+            <view v-if="car_m[0]">
+                <u-form :model="car_m[0]" ref="uForm" :errorType="errorType" class="car-m-info">
                     <u-form-item label-width="180"
                                  :label-position="labelPosition" label="回收业务员" prop="empl_name">
                         <u-input :border="border" type="select" :select-open="empl_nameSheetShow"
@@ -60,8 +60,8 @@
 
         <view class="u-m-t-20 u-p-20 page-top-view">
             <view class="u-item-title">车辆信息</view>
-            <view v-if="car_m">
-                <u-form :model="car_m" ref="uForm" :errorType="errorType">
+            <view v-if="car_m[0]">
+                <u-form :model="car_m[0]" ref="uForm" :errorType="errorType">
 
                     <u-form-item label-width="180"
                                  :label-position="labelPosition" label="车辆销户" prop="cancel_flag">
@@ -141,8 +141,8 @@
 
         <view class="u-m-t-20 u-p-20 page-top-view">
             <view class="u-item-title">价格信息</view>
-            <view v-if="car_m">
-                <u-form :model="car_m" ref="uForm" :errorType="errorType">
+            <view v-if="car_m[0]">
+                <u-form :model="car_m[0]" ref="uForm" :errorType="errorType">
                     <u-form-item label-width="180"
                                  :label-position="labelPosition" label="是否溢价" prop="is_yj">
                         <u-input :border="border" type="select" :select-open="is_yjSheetShow"
@@ -375,6 +375,8 @@
                 car_d: [],
                 car_d_ado_name: 'car_d',
 
+                car_img: [],
+
                 page_first_action: '',
 
 
@@ -386,14 +388,28 @@
                 swbImgshowProgress: false,
 
                 action_bill_submit: 'Save',
+                //viewData: {},
 
-                checkid: ''
+                checkid: '',
+
+                adapter: {
+                    phone_car_input_inner_desk: {
+                        group: true
+                    },
+                    phone_car_input_inner_bill: {
+                        ados: {
+                            car_m: {rows: 'car_m', vars: 'viewData', options: {}},
+                            car_d: {rows: 'car_d', vars: '', options: {}},
+                            car_img: {rows: 'car_img', vars: '', options: {}}
+                        }
+                    },
+                }
             }
         },
 
-        beforeCreate() {
-            this.$e = new this.$Engine();
-        },
+        // beforeCreate() {
+        //     this.$e = new this.$Engine();
+        // },
 
         // onLoad() {
         //     let adapter = this.$e.getActiveModule(this.moduleName, true).createAdapter(this, true);
@@ -404,15 +420,17 @@
         // },
 
         onLoad() {
+            this.$e = new this.$Engine(this);
+
             var urlParams = this.$parseURL();
             if (urlParams.actionName) {
                 this.page_first_action = urlParams['actionName'];
                 this.checkid = urlParams['checkid'];
             }
 
-            let adapter = this.$e.getActiveModule(this.moduleName, true).createAdapter(this, true);
-            adapter.mappingData(this.car_d_ado_name, "car_d");
-            adapter.mappingData(this.car_m_ado_name, "car_m");
+            // let adapter = this.$e.getActiveModule(this.moduleName, true).createAdapter(this, true);
+            // adapter.mappingData(this.car_d_ado_name, "car_d");
+            // adapter.mappingData(this.car_m_ado_name, "car_m");
 
             // adapter.mappingData(this.car_m_ado_name, "viewData");
             this.getListData();

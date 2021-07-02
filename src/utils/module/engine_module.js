@@ -999,7 +999,7 @@ class ADOAgent {
                 this.context.request(this.getActiveModuleName(), "pagedata", '', null, null, options, resolve, reject);  // , null, null, options
             });
         }
-        return new Promise.resolve({});
+        return Promise.resolve({});
     };
 
     hasNextPage = () => {
@@ -1012,14 +1012,14 @@ class ADOAgent {
         let page = pg.getCurrentPage();
         if (pg.getPageCount() > 0 && (page < pg.getPageCount() - 1)) {
             let options = {};
-            if (page != this.dataPage.currentPage) {
-                options.params = {_name: this.getName(), page: page + 1};
-                return new Promise((resolve, reject) => {
-                    this.context.request(this.getActiveModuleName(), "pagedata", '', null, null, options, resolve, reject);
-                });
-            }
+            //if (page != this.dataPage.currentPage) {
+            options.params = {_name: this.getName(), page: page + 1};
+            return new Promise((resolve, reject) => {
+                this.context.request(this.getActiveModuleName(), "pagedata", '', null, null, options, resolve, reject);
+            });
+            //}
         }
-        return new Promise.resolve({});
+        return Promise.resolve({});
     };
 
     release = () => {
@@ -1071,8 +1071,9 @@ class Engine {
 
     //初始化，外部驱动
     init = (amgn, amn, checkid, options = {}) => {
-        amn = amn || amgn;
-        this._amgn = amgn;
+        this._amgn = amgn || this._amgn;
+        amn = amn || this._amgn;
+
         if (checkid) {
             this._checkid = checkid;
         }
@@ -1448,9 +1449,10 @@ class Engine {
         // if (options.async == undefined) {
         //     options.async = true;// (type == 'call') ? false : true;
         // }
-        // if (options.params) {
-        //     fn.extend(options.params, settings, true);
-        // }
+        if (options.params) {
+            fn.extend(options.params, settings, true);
+            delete options.params;
+        }
         // options.error = options['error'] || this.defa_error;
 
         this.ajax(settings, data, options, resolve, reject);
@@ -1549,6 +1551,10 @@ class Engine {
      * @param reject
      */
     ajax = (ajaxUrl, postData, options, resolve, reject) => {
+
+        console.log('----------------ajax---------' + JSON.stringify(options));
+
+
         if (this.delayed) {
             clearTimeout(this.delayed);
             this.delayed = null;
@@ -1558,7 +1564,8 @@ class Engine {
             method: 'POST',
             data: postData
         };
-        //let
+
+        console.log('---------------tt----------------' + JSON.stringify(settings))
 
         let self = false;
         if (options) {
@@ -1758,7 +1765,17 @@ class ActiveModule {
         let data = ado.getReflectData();
         if (data) {
             let name = ado.getName();
-            let rows0 = this.context.getMV().$data[this.mapping[name]['rows']];
+
+
+            let mpname = this.mapping[name];
+            let rows0 = null;
+            if (mpname) {
+                rows0 = this.context.getMV().$data[this.mapping[name]['rows']];
+            }else{
+                throw "ado "+name +" not in adapter !!!";
+            }
+
+
             //let rows0 = this.context.getMV().$data[this[name]['rows']];
             if (data.type == 'refresh') {
                 if (!!data.clear) {
@@ -1803,7 +1820,7 @@ class ActiveModule {
             let vars = data['vars'];
             if (vars) {
                 //vars 中的变量名是区分大小写的
-                let vars0 = this.context.vue.$data[this[name]['vars']];
+                let vars0 = this.context.vue.$data[this.mapping[name]['vars']];
                 if (vars0) {
                     for (let i in vars) {
                         vars0[i] = vars[i];
@@ -1821,7 +1838,7 @@ class ActiveModule {
         }
         if (cols !== 'none') {
             let row, idRows = ado.getRowIDMap();
-            let rows0 = this.vue.$data[this[name]['rows']];
+            let rows0 = this.vue.$data[this.mapping[name]['rows']];
             for (let i = 0; i < rows0.length; i++) {
                 row = idRows(rows0[i].__rowid);
                 if (!cols) {
