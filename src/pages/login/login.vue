@@ -34,8 +34,8 @@
                 //     userid: '',
                 //     pwd: ''
                 // },
-                list_data:[],
-                list_vars:{},
+                // list_data:[],
+                // list_vars:{},
                 rules: {
                     userid: [
                         {
@@ -75,85 +75,39 @@
             this.$refs.uForm.setRules(this.rules);
         },
 
-        beforeCreate(){
+        beforeCreate() {
+            console.log('----------------------');
             this.$e = new this.$Engine();
         },
 
         methods: {
             submit() {
-                console.log("this==>",this);
+                console.log("this==>", this);
+                console.log('-----------------', window)
                 let vm = this;
                 this.$refs.uForm.validate(valid => {
                     if (valid) {
-                        console.log('-----------------------------------', this.$e);
                         this.$e.init(this.groupName, this.moduleName, null, {
                             _act: this.action_login,
                             params: this.model
                         }).then(function (res) {
 
-                            if (res && res['envs']) {
-                                console.log('this',this);
-                                //修改store中登录状态
-                                vm.$store.commit('login', res['envs']);
-                                //缓存登录信息
-                                // this.$cache.set('autoLoginInfo', {
-                                //     userid: res['envs']['sid'],
-                                //     pwd: res['envs']['result']
-                                // }, 0);
+                            console.log('-----------res-----------' + JSON.stringify(vm.$e.envs));
 
-                                //保存用户名信息，用于显示
-                                // this.$cache.set('username', res['envs']['username'], 0);
+                            if (vm.$e.envs) {
 
-                                if (vm.$store.state.hasLogin) {
-                                    vm.$openPage({
-                                        name: 'index',
-                                        query: {}
-                                    })
+                                //vm.$store.commit('login', res['envs']);
 
+                                vm.$openPage({
+                                    name: 'index',
+                                    query: {}
+                                })
 
-                                    // uni.navigateTo({
-                                    //     url: `/pages/index/index`,
-                                    //     animationType: 'slide-in-left',
-                                    //     animationDuration: 250,
-                                    //     success : res => {
-                                    //         res.eventChannel.emit('send',{
-                                    //             vueP : vm,
-                                    //             msg : vm.$e
-                                    //         });
-                                    //     },
-                                    //     fail : msg =>{
-                                    //         console.log('msg', msg);
-                                    //     }
-                                    // });
-                                }
                             }
-                            console.log('-----------res-----------' + JSON.stringify(res));
+
                         });
 
-                        // util.initModule(that.groupName, that.moduleName, {
-                        //     actionName: this.action_login,
-                        //     params: this.model
-                        // }).then(function (res) {
-                        //     if (res && res['envs']) {
-                        //         //修改store中登录状态
-                        //         that.$store.commit('login', res['envs']);
-                        //         //缓存登录信息
-                        //         that.$cache.set('autoLoginInfo', {
-                        //             userid: res['envs']['sid'],
-                        //             pwd: res['envs']['result']
-                        //         }, 0);
-                        //
-                        //         //保存用户名信息，用于显示
-                        //         that.$cache.set('username', res['envs']['username'], 0);
-                        //
-                        //         if (that.$store.state.hasLogin) {
-                        //             that.$openPage({
-                        //                 name: 'index',
-                        //                 query: {}
-                        //             })
-                        //         }
-                        //     }
-                        // });
+
                         console.log('验证通过');
                     } else {
                         console.log('验证失败');

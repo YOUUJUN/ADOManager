@@ -18,13 +18,11 @@
 
             if (!this.$store.state.hasLogin) {
                 that.$openPage({
-                    name: 'login',
-                    query: {}
+                    name: 'login'
                 })
             } else {
                 that.$openPage({
-                    name: 'index',
-                    query: {}
+                    name: 'index'
                 })
             }
         },

@@ -35,7 +35,8 @@ request('call',"Save",).then(result =>{
 
 
 
-const baseURL = "http://192.168.3.62:3001";
+// const baseURL = "http://192.168.3.62:3001";
+const baseURL = '/api/';
 
 const myAxios =  async (options = {}) => {
 

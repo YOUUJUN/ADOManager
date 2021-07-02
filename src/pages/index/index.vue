@@ -40,8 +40,8 @@
                 arrow: true,
                 useSlot: true,
 
-                groupName: 'phone_app',
-                moduleName: 'phone_app',
+                // groupName: 'phone_app',
+                // moduleName: 'phone_app',
                 action_init: 'InitRight',
 
 
@@ -50,21 +50,21 @@
 
                 //环境变量
                 envs: {},
-                title: '首页'
+                title: '首页',
+
+                adapter:{
+                    phone_app:{
+                        ados:{
+                            user_right:{rows:'menuList',vars: '',options:{}}
+                        },
+                        group:true
+                    }
+                }
             }
         },
 
-        beforeCreate(){
-            this.$e = new this.$Engine();
-        },
-
-        // onLoad (){
-        //     let vm = this;
-        //     const eventChannel = this.getOpenerEventChannel();
-        //     eventChannel.on('send',(data) => {
-        //         console.log('if equal=============>',data.msg === vm.$e);
-        //     })
-        //
+        // beforeCreate(){
+        //     this.$e = new this.$Engine();
         // },
 
         computed: {
@@ -107,6 +107,10 @@
             }
         },
 
+        onLoad() {
+            this.$e = new this.$Engine(this);
+            //this.getCompanyData();
+        },
 
         onShow() {
             this.getMenuData();
@@ -145,8 +149,8 @@
             getMenuData() {
                 console.log("$e",this.$e);
                 let that = this;
-                let adapter = that.$e.getActiveModule(this.moduleName, true).createAdapter(this);
-                adapter.mappingData(that.user_right_ado_name, "menuList");
+                // let adapter = that.$e.getActiveModule(this.moduleName, true).createAdapter(this);
+                // adapter.mappingData(that.user_right_ado_name, "menuList");
 
                 that.$e.init(that.groupName, that.moduleName, null, {
                     _act: this.action_init,
@@ -154,17 +158,6 @@
                     that.envs = that.$e.envs;
                     console.log('---------------getMenuData-------', that.menuList)
                 });
-
-                //this.$e.__hello = 0
-
-                // await util.initModule(that.groupName, that.moduleName, {
-                //     actionName: that.action_init,
-                // }).then(function (res) {
-                //     if (res && res.data) {
-                //         that.menuList = res.data[0].rows;
-                //         that.envs = res['envs'];
-                //     }
-                // });
             },
 
             openPage(path) {

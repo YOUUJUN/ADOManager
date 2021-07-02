@@ -36,12 +36,21 @@
                 action_refresh: 'Refresh',
 
                 comp_ado_name: 'comp_list',
-                action_login_company: 'LoginCompany'
+                action_login_company: 'LoginCompany',
+
+                adapter:{
+                    phone_comp_list:{
+                        ados:{
+                            comp_list:{rows:'companyList',vars: '',options:{}}
+                        },
+                        group:true
+                    }
+                }
             }
         },
 
         beforeCreate(){
-            this.$e = new this.$Engine();
+
         },
 
         // onShow() {
@@ -57,9 +66,9 @@
 
         onLoad() {
 
-            let adapter = this.$e.getActiveModule(this.moduleName, true).createAdapter(this, true);
-            adapter.mappingData(this.comp_ado_name, "companyList");
-
+            // let adapter = this.$e.getActiveModule(this.moduleName, true).createAdapter(this, true);
+            // adapter.mappingData(this.comp_ado_name, "companyList");
+            this.$e = new this.$Engine(this);
             this.getCompanyData();
         },
 

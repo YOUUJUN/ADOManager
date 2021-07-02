@@ -3,9 +3,6 @@
 import {fn} from './utils_module.js';
 import {extend as $extend} from "./utils_module";
 
-import $axios from '../web_module.js';
-
-
 const ado_status = {
     REFRESH: '0',
     ROW_NOEDIT: '0',
@@ -14,6 +11,7 @@ const ado_status = {
     ROW_DELETE: '3',
     EVENT_ALL: '#all'
 };
+
 
 // 该类定义一行的属性（而一行包含n列，其属性有：行的长度/length，状态标示/statusFlag，
 // 行的id/rowID---唯一标示该行的属性）
@@ -44,6 +42,7 @@ class Column {
     }
 }
 
+
 class DataPage {
     ado = null;
     pages = 1;
@@ -51,10 +50,10 @@ class DataPage {
     currentPage = 0;
     refreshRows = 0;
 
-    constructor(ado, pagerows, page, pages) {
+    constructor(ado, _pagerows, _page, _pages) {
         this.ado = ado;
-        this.pageRows = pagerows;
-        this.changePage(page, pages);
+        this.pageRows = _pagerows;
+        this.changePage(_page, _pages);
     }
 
     changePage = (page, pages) => {
@@ -109,13 +108,15 @@ class ADOAgent {
     isEdit = false;
     editCols = null;// 可以修改的列序号
     // 是否正在刷新
+    locked = false;
     preRowNum = -1;
     vars = null;
     onLoad = null;// 加载完成时的事件函数
+    isInited = false;
     maxRowID = 0;
-    context = null;
+    engine = null;
 
-    constructor(name, context) {
+    constructor(name, engine) {
         // 该组件的数据存放使用SelfArray类型的变量作为容器
         this.rows = [];// 主缓存数据
         this.vars = {};// 数据对象变量
@@ -123,7 +124,7 @@ class ADOAgent {
         this.colsIndex = {};// 所有的列对应的序号,
         this.name = name;
         this.reflectData = null;//{type:'refresh'/'edit',rows:[],clear:false/true,vars:{}};
-        this.context = context
+        this.engine = engine
     }
 
     forActiveCell = (props, cell) => {
@@ -169,7 +170,7 @@ class ADOAgent {
         let addRows = 0;
 
         try {
-            //this.locked = true;
+            this.locked = true;
             // 是否转换列名
             this.reflectData = {
                 type: (addType == 'refresh' ? 'refresh' : 'edit'),
@@ -177,6 +178,7 @@ class ADOAgent {
                 vars: vars,
                 clear: false
             };
+
             switch (addType) {
                 case 'refresh':
                     // 刷新,清空数据
@@ -271,20 +273,29 @@ class ADOAgent {
                                 this.reflectData.rows.push(map);
                                 addRows++;
                             }
+
                             break;
                     }
+
                 });
             }
+
             this.isEdit = isEdit;
             if (page == 0 && addType == "refresh") {
                 this.dataPage.refreshRows = this.getRowsCount();
             }
+
             if (vars) {
-                fn.extend(vars, this.vars, true, true);
+                $extend(this.vars, vars, true, true);
             }
+            this.isInited = true;
         } catch (error) {
             throw error;
+        } finally {
+            this.locked = false;
         }
+        //this.preRowNum = -1;
+        // 重建行号
         this.buildRowNum();
     };
 
@@ -420,7 +431,10 @@ class ADOAgent {
     buildRowNum = () => {
         if (this.rows.length > 0) {
             let row = this.dataPage.getRowNum(0);
+            //console.log('-------------------------' , this.rows.entries())
             for (let [index, row] of this.rows.entries()) {
+                //console.log('---------------', index);
+                //console.log('---------------', row);
                 row.__rownum = index++;//__rownum是内部编号,不对外提供
                 row.__row = index;
             }
@@ -476,6 +490,21 @@ class ADOAgent {
     getRowStatus = (row) => this.rows[row].__status;
 
     getRowRealStatus = (row) => this.rows[row].__status2;
+
+
+    /**
+     * 在主数据缓存区根据id获取一行的属性
+     *
+     * @param rowid
+     *            数据行的rowid
+     * @param colsname
+     *            数组列名(如['name','age'])或用",'连接的字段名字符串(如'name,age')
+     * @returns
+     */
+    // getRowPropertiesById : function(rowid, colsname) {
+    // 	let r = this.findRowByRowID(rowid);
+    // 	return r >= 0 ? this.getRowProperties(r, colsname) : null;
+    // },
 
     /**
      * 获取行数据,一般只用于内部调用
@@ -665,6 +694,18 @@ class ADOAgent {
     setEdit = (edit) => {
         this.isEdit = edit;
     };
+
+
+    /**
+     * 设置刷新状态,ok
+     *
+     * @param b
+     * @returns
+     */
+    setLocked = (b) => {
+        this.locked = !!b;
+    };
+
 
     /**
      * 统计主缓存区某列的值
@@ -986,20 +1027,21 @@ class ADOAgent {
         this.sortBy([[cname, type || 1]]);
     };
 
-    toPage = (page) => {
+    toPage = (page, options = {}) => {
         if (page < 0) {
             page = 0;
         } else if (page >= this.dataPage.pages) {
             page = this.dataPage.pages - 1;
         }
-        let options = {};
         if (page != this.dataPage.currentPage) {
-            options.params = {_name: this.getName(), page: page};
-            return new Promise((resolve, reject) => {
-                this.context.request(this.getActiveModuleName(), "pagedata", '', null, null, options, resolve, reject);  // , null, null, options
-            });
+            options.params = options.params || {};
+            options.params._name = this.getName();
+            options.params.page = page;
+            this.engine.pageCall(this.getActiveModuleName(), options);
+
+            return true;
         }
-        return new Promise.resolve({});
+        return false;
     };
 
     hasNextPage = () => {
@@ -1007,28 +1049,20 @@ class ADOAgent {
         return pg.hasNextPage();
     };
 
-    nextPage = () => {
+    nextPage = (options) => {
         let pg = this.getDataPage();
-        let page = pg.getCurrentPage();
-        if (pg.getPageCount() > 0 && (page < pg.getPageCount() - 1)) {
-            let options = {};
-            if (page != this.dataPage.currentPage) {
-                options.params = {_name: this.getName(), page: page + 1};
-                return new Promise((resolve, reject) => {
-                    this.context.request(this.getActiveModuleName(), "pagedata", '', null, null, options, resolve, reject);
-                });
-            }
+        if (pg.getCurrentPage() < pg.getPageCount() - 1) {
+            return this.toPage(pg.getCurrentPage() + 1, options);
         }
-        return new Promise.resolve({});
+        return false;
     };
 
     release = () => {
         this.reset(true);
-        if (this.context) {
-            this.dataPage.release();
-            this.context = null;
-            this.dataPage = null;
-        }
+        // 该函数未声明
+        // removeADO(this.getName(), this.getActiveModuleName());
+        this.dataPage.release();
+        this.dataPage = null;
     };
 
     toString = () => this.name;
@@ -1039,36 +1073,12 @@ class Engine {
     _amgn = null;
     _checkid = null;
     _lifeType = 'keep';
+    _baseURI = '/api/';
     envs = {};
+    am = null;
     ams = {};
+
     fn = fn;
-    vue = null;
-
-    constructor(vue) {
-        this.vue = vue;
-        if (vue && vue.$data['adapter']) {
-            let adapter = vue['adapter'];
-            let am = null;
-            for (let amn in adapter) {
-                am = new ActiveModule(amn, this);
-                if (adapter[amn]['group']) {
-                    this._amgn = amn;
-                }
-                //映射数据对象数据
-                let ados = adapter[amn]['ados'];
-                if (ados) {
-                    let a1 = null;
-                    for (let name in ados) {
-                        a1 = ados[name];
-                        am.mappingData(name, a1['rows'], a1['vars'] || '', a1['options']);
-                    }
-                }
-                //缓存amn
-                this.ams[amn] = am;
-            }
-        }
-    }
-
     //初始化，外部驱动
     init = (amgn, amn, checkid, options = {}) => {
         amn = amn || amgn;
@@ -1076,8 +1086,21 @@ class Engine {
         if (checkid) {
             this._checkid = checkid;
         }
+
+        // if (!this.am && amn == amgn) {
+        //     this.am = new ActiveModule(amgn);
+        //     this.ams[amgn]=this.am;
+        // }
+        let am1 = this.getActiveModule(amn);
         let act = options['_act'];
-        if (!this._inited || (!this._checkid) || (checkid != this._checkid)) {
+        // if (!options.success) {
+        //     options.success = this._inited;
+        //     options.context = this;
+        // } else {
+        //     options.success = [this.initEnd, options.success];
+        // }
+        if (!this._inited || (!this._checkid) || (checkid != this._checkid) || !am1) {
+            //this.request(amn, "reg_am", act, null, null, options);
             return new Promise((resolve, reject) => {
                 this.request(amn, "reg_am", act, null, null, options, resolve, reject);  // , null, null, options
             });
@@ -1085,11 +1108,11 @@ class Engine {
             return new Promise((resolve, reject) => {
                 this.request(amn, "call", act, null, null, options, resolve, reject);  // , null, null, options
             });
+            //this.request(amn, "call", act, null, null, options);
         }
     }
 
     initEnd = (options) => {
-        options = options || this.envs;
         this._public = options['public'] || false;
         this._lifeType = (options['lifeType'] || 'keep') == 'keep';
         this._inited = true;
@@ -1099,9 +1122,16 @@ class Engine {
         cell._mn = props._mn;
         cell._amn = props._amn;
     }
-    getActiveModule = (name) => {
-        name = fn.convertName(name);
-        return this.ams[name];
+    getActiveModule = (name, force) => {
+        // if (!name || name == this._amgn) {
+        //     return this.am;
+        // }
+        let am1 = this.ams[name];
+        if (!am1 && force) {
+            am1 = new ActiveModule(name);
+            this.ams[name] = am1;
+        }
+        return am1;
     }
 
     getADO = (name, amn) => {
@@ -1110,32 +1140,14 @@ class Engine {
         return am ? am.getADO(name) : null;
     }
 
-    getEnv = (name) => {
-        return this.envs[name];
+    getAdapter(amn) {
+        let am = this.getActiveModule(amn);
+        return am ? am.getAdapter() : null;
     }
-    /**
-     *
-     * @param amn
-     * @param type call/async
-     * @param action 动作名
-     * @param options
-     * @param norand 不生成随机码
-     * @returns {*}
-     */
-    buildURL = (amn, type, action, options, norand) => {
-        let settings = {
-            _amgn: this._amgn,
-            _amn: amn || this._amgn,
-            _name: action,
-            _type: type,
-            _checkid: this._checkid
-        };
-        options = options || {};
-        settings._hasdata = (options.hasdata == undefined) ? '0' : options.hasdata;
-        if (options.params) {
-            fn.extend(options.params, settings, true);
-        }
-        return this.serialURL(settings, !!norand);
+
+    createAdapter(vue, amn) {
+        let am = this.getActiveModule(amn, true);
+        return am.createAdapter(vue);
     }
 
     serialURL = (url, norand) => {
@@ -1179,35 +1191,6 @@ class Engine {
             }, options);
         return this.serialURL(options, noid);
     }
-
-    /**
-     * 返回数组类型的[{label:'xxx',value}]
-     * @param text
-     * @param p1
-     * @param p2
-     * @returns {{}}
-     */
-    parseListData(text, p1, p2) {
-        let data = [];
-        if (text) {
-            if (typeof (text) == 'string') {
-                let vs = text.split(p1 || ";");
-                p2 = p2 || "/";
-                for (let i = 0; i < vs.length; i++) {
-                    let j = vs[i].indexOf(p2);
-                    if (j >= 0) {
-                        data.push({value: vs[i].substring(0, j), label: vs[i].substring(j + 1)});
-                    } else {
-                        data.push({value: vs[i], label: vs[i]});
-                    }
-                }
-            } else {
-                data = text;
-            }
-        }
-        return data;
-    }
-
     // 产生随机数,ok
     randNum = () => {
         let today = new Date();
@@ -1218,6 +1201,12 @@ class Engine {
         //return this.request(amn, "call", name, ados, jsondata, options);
         return new Promise((resolve, reject) => {
             this.request(amn, "call", name, ados, jsondata, options, resolve, reject);  // , null, null, options
+        });
+    }
+
+    pageCall = (amn, options) => {
+        return new Promise((resolve, reject) => {
+            this.request(amn, "pagedata", '', null, null, options, resolve, reject);  // , null, null, options
         });
     }
 
@@ -1237,19 +1226,27 @@ class Engine {
             data.data = jsondata;// (rowsparm instanceof
             // Array)?rowsparm:[rowsparm];
         }
-        return fn.isEmptyObject(data) ? null : data;
+        return fn.isEmptyObject(data) ? null : JSON.stringify(data);
     }
     getEditADOData = (amn, ados) => {
         let data = [];
         if (ados) {
-            let ado, names, am;
+            let ado, names, adapter;
             names = (ados instanceof Array) ? ados : ados.split(",");
             for (let i = 0; i < names.length; i++) {
-                am = this.getActiveModule(amn);
-                if (am) {
-                    ado = am.getADO(names[i]);
+                // p = names[i].indexOf("/");
+                // if (p >= 0) {
+                //     amn = names[i].substring(0, p);
+                //     name = names[i].substring(p + 1);
+                // } else {
+                //     amn = _amn;
+                //     name = names[i];
+                // }
+                adapter = this.getAdapter(amn);
+                if (adapter) {
+                    ado = this.getADO(names[i], amn);
                     if (ado) {
-                        am.inData(ado);
+                        adapter.inData(ado);
                         // 此处只有存在该数据对象时,才获取同步数据
                         let adata = ado.getUpdateData();
                         if (adata) {
@@ -1264,7 +1261,7 @@ class Engine {
 
     loadData = (s) => {
         if (s) {
-            let cells;
+            var cells;
             if ((typeof (s) === "string") || (s instanceof String)) {
                 if (!s.startsWith("{") || !s.endsWith("}")) {
                     return;
@@ -1273,9 +1270,16 @@ class Engine {
             } else {
                 cells = s;
             }
-            let name, amn, view, ado;
+            var name, amn, view, ado;
+            // var cells = JSON.parse(s);
+
+            // 卸载工作的业务模型
+            // var dump = cells["dump"];
+            // if (dump) {
+            //     this.releaseMember(dump);
+            // }
             // env
-            let envs = cells['envs'];
+            var envs = cells['envs'];
             //var onLoadScript = cells['onLoad'];
             var cbps = cells["cbps"];//回调函数的参数
             if (envs && !fn.isEmptyObject(envs)) {
@@ -1295,10 +1299,10 @@ class Engine {
             }
 
             var ados = cells['ados'];
-            var prop;//, mkados = [];
+            var prop, mkados = [];
             if (ados && ados.length > 0) {
                 // 数据对象定义
-                for (let i = 0; i < ados.length; i++) {
+                for (var i = 0; i < ados.length; i++) {
                     // 创建db
                     prop = ados[i];
                     if (prop) {
@@ -1309,18 +1313,18 @@ class Engine {
                             ado = new ADOAgent(name, this);
                             ado.init(prop);
                             this.getActiveModule(amn, true).addADO(ado);
-                            //mkados.push(ado);
+                            mkados.push(ado);
                         }
                     }
                 }
             }
-            var ds = '', am = null;
+            var ds = '';
             // data,初始是reload
             var data = cells['data'];
             if (data && data.length > 0) {
                 // 一个或多个ADOAgent的数据
                 ds = [];
-                for (let i = 0; i < data.length; i++) {
+                for (var i = 0; i < data.length; i++) {
                     if (data[i]) {
                         name = data[i].name;
                         amn = data[i]._amn;
@@ -1342,62 +1346,32 @@ class Engine {
                 }
             }
             if (ds) {
-                // let adapter = null;
+                let adapter = null, am;
                 for (let i = 0; i < ds.length; i++) {
                     am = this.getActiveModule(ds[i].getActiveModuleName());
-                    if (am) {
-                        am.outData(ds[i], true);
+                    adapter = am.getAdapter();
+
+                    if (!adapter) {
+                        adapter = this.getAdapter(ds[i].getActiveModuleName());
+                    }
+
+                    if (adapter) {
+                        adapter.outData(ds[i], true);
                     }
                 }
             }
             if (envs && !fn.isEmptyObject(envs)) {
                 fn.extend(envs, this.envs, true, true);
             }
-            let ld = cells["view_or"];
-            if (ld) {
-                let viewData = null, apapter = null;
-                for (amn in ld) {
-                    let vs = ld[amn];
-                    am = this.getActiveModule(amn);
-                    if (am) {
-                        for (var vn in vs) {
-                            if (am.getADO(vn)) {
-                                am.changeViewProperty(vn, vs[vn]['_child_or'] ? vs[vn]['_child_or'] : vs[vn]);
-                            } else {
-                                //transParent
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 
 
-    /**
-     * type: 'ado',
-     *  isParent: false,
-     *  data: data[i],
-     *  name: name,
-     *   _amn: amn,
-     *  _amgn: this._amgn
-     */
     transParent = (options) => {
-        if (this.vue) {
-            let parent = this.vue.$parent;
-            let ok = false;
-            if (parent) {
-                options.isParent = true;
 
-
-                if (!ok && parent.$parent && parent.$e) {
-
-                }
-            }
-        }
     }
 
-    request2 = (amn, type, name, adosname, jsondata, options, resolve, reject) => {
+    request = (amn, type, name, adosname, jsondata, options, resolve, reject) => {
         // 获取需要同步的数据对象action, param, data
         amn = (amn || this._amgn);
         let data = this.buildData(amn, adosname, jsondata);
@@ -1425,327 +1399,184 @@ class Engine {
         // return new Promise((resolve, reject) => {
         this.ajax(settings, data, options, resolve, reject);  // , null, null, options
         // })
-    };
-
-    request = (amn, type, name, adosname, jsondata, options, resolve, reject) => {
-        // 获取需要同步的数据对象action, param, data
-        amn = (amn || this._amgn);
-        let data = this.buildData(amn, adosname, jsondata);
-        // 执行服务器端调用,主动分析返回的数据,做相关的处理,顺序是先处理同步数据,再显示同步消息
-        // 如1.数据保存后,返回的同步信息
-        // 2.在刷新数据对象时,更新本地缓存的数据
-        // 3.其他方式下,执行服务器端调用后,同步返回的信息
-        let settings = {
-            _baseURI: "cloud?",
-            _amgn: this._amgn,
-            _amn: amn || this._amgn,
-            _name: name,
-            _type: type,
-            _hasdata: (data ? "1" : "0"),
-            _checkid: this._checkid
-        };
-        // options = options || {};
-        // if (options.async == undefined) {
-        //     options.async = true;// (type == 'call') ? false : true;
-        // }
-        // if (options.params) {
-        //     fn.extend(options.params, settings, true);
-        // }
-        // options.error = options['error'] || this.defa_error;
-
-        this.ajax(settings, data, options, resolve, reject);
     }
-
-
     //处理默认的系统消息
     defaultError = (err) => {
         if (err.code == 101) {
-            // fn.showModal('信息提示', err.message || err.msg);
+            fn.showModal('信息提示', err.message || err.msg);
         } else if (err.code == 111) {
             this.exitSystem();
         } else {
-            // fn.showModal('信息提示', '错误代码：' + err.code + "," + (err.message || err.msg));
+            fn.showModal('信息提示', '错误代码：' + err.code + "," + (err.message || err.msg));
         }
     }
     //退出系统，重新登录
     exitSystem = () => {
-        // this.showModal('系统提示', '网络连接超时，请您重新登录', {
-        //     method: function () {
-        //         //退出app
-        //         //#ifdef APP-PLUS
-        //         if (plus.os.name.toLowerCase() === 'android') {
-        //             plus.runtime.quit();
-        //         } else {
-        //             const threadClass = plus.ios.importClass("NSThread");
-        //             const mainThread = plus.ios.invoke(threadClass, "mainThread");
-        //             plus.ios.invoke(mainThread, "exit");
-        //         }
-        //         //#endif
-        //     }
-        // });
+        this.showModal('系统提示', '网络连接超时，请您重新登录', {
+            method: function () {
+                //退出app
+                //#ifdef APP-PLUS
+                if (plus.os.name.toLowerCase() === 'android') {
+                    plus.runtime.quit();
+                } else {
+                    const threadClass = plus.ios.importClass("NSThread");
+                    const mainThread = plus.ios.invoke(threadClass, "mainThread");
+                    plus.ios.invoke(mainThread, "exit");
+                }
+                //#endif
+            }
+        });
     }
     release = () => {
         if (this.ams) {
+            if (this.am) {
+                this.am = null;
+            }
             for (let i in this.ams) {
                 this.ams[i].release();
             }
             this.ams = null;
-            this.vue = null;
-            this.envs = null;
         }
-    }
-    parseError = (res) => {
-        let msg = "";
-        switch (res.status) {
-            case 400:
-                msg = "错误请求";
-                break;
-            case 401:
-                msg = "访问拒绝";
-                break;
-            case 403:
-                msg = "拒绝访问";
-                break;
-            case 404:
-                msg = "请求错误，未找到该资源";
-                break;
-            case 405:
-                msg = "请求方法未允许";
-                break;
-            case 408:
-                msg = "请求超时";
-                break;
-            case 500:
-                msg = "服务器端出错";
-                break;
-            case 501:
-                msg = "网络未实现";
-                break;
-            case 502:
-                msg = "网络错误";
-                break;
-            case 503:
-                msg = "服务不可用";
-                break;
-            case 504:
-                msg = "网络超时";
-                break;
-            case 505:
-                msg = "http版本不支持该请求";
-                break;
-            default:
-                msg = "http 未知错误！";
-                break;
-        }
-        return {code: res.status, message: msg};
     }
 
-    /**
-     *
-     * @param ajaxUrl
-     * @param postData
-     * @param options
-     * @param resolve
-     * @param reject
-     */
     ajax = (ajaxUrl, postData, options, resolve, reject) => {
         if (this.delayed) {
             clearTimeout(this.delayed);
             this.delayed = null;
         }
-        let settings = {
-            url: this.serialURL(ajaxUrl),
-            method: 'POST',
-            data: postData
-        };
-        //let
+        // this.delayed = setTimeout(() => {
+        //     uni.showLoading({
+        //         mask: true,
+        //         title: '请稍候...'
+        //     })
+        // }, 100);
+        // resolve=resolve||(()=>{});
+        // reject=reject ||(()=>{});
+        console.log('---------postData------' + JSON.stringify(postData))
+        console.log('---------ajaxURL------' + this.serialURL(ajaxUrl))
 
-        let self = false;
-        if (options) {
-            let setting = options['setting'] || {};
-            this.fn.extend(setting, settings, true);
-            if (options['parseSelf']) {
-                self = true;
-            }
-        }
-        $axios(settings).then((res) => {
-            if (res.status === 200) {
-                try {
-                    if (self) {
-                        //自己解析数据
-                        resolve(res.data);
-                    } else {
+        let setting = {
+            url: this.serialURL(ajaxUrl),
+            data: postData,
+            header: {
+                'content-type': 'application/json'
+            },
+            method: 'POST',
+            dataType: 'json',
+            responseType: "text",
+            success: (res) => {
+                console.log('-------------success---------' + JSON.stringify(res));
+                if (res.statusCode === 200) {
+                    //console.log('ajax url==============================' + ajaxUrl + ', ------success---response---' + JSON.stringify(res.data));
+                    try {
                         this.loadData(res.data);
                         let err = res.data['error'];
                         if (err) {
                             if (err.code == 111) {
-                                this.exitSystem();
+                                fn.exitSystem();
                                 return;
                             }
-                            throw err;
+                            throw res.data['error'];
                         } else if (res.data['message'] || res.data['msg']) {
                             //提示性信息按异常处理
-                            throw {code: 101, message: (res.data['message'] || res.data['msg'])};
+                            throw {code: 101, message: res.data['message'] || res.data['msg']};
                         } else {
-                            //返回的参数
-                            resolve(res.data['cbps'] || {});
+                            resolve(res.data);
                         }
+                    } catch (err) {
+                        reject(err);
                     }
-                } catch (err) {
-                    reject(err);
+                } else {
+                    reject(res.data);
                 }
-            } else {
-                //其实，res.status ！== 200，并不一定是错误的，对于后端请求重定向的status,就不是 200
-                reject(this.parseError(res));
+            },
+
+            fail: (res) => {
+                console.log('-----------fail-----------' + JSON.stringify(res));
+                let msg = "";
+                switch (res.status) {
+                    case 400:
+                        msg = "错误请求";
+                        break;
+                    case 401:
+                        msg = "访问拒绝";
+                        break;
+                    case 403:
+                        msg = "拒绝访问";
+                        break;
+                    case 404:
+                        msg = "请求错误，未找到该资源";
+                        break;
+                    case 405:
+                        msg = "请求方法未允许";
+                        break;
+                    case 408:
+                        msg = "请求超时";
+                        break;
+                    case 500:
+                        msg = "服务器端出错";
+                        break;
+                    case 501:
+                        msg = "网络未实现";
+                        break;
+                    case 502:
+                        msg = "网络错误";
+                        break;
+                    case 503:
+                        msg = "服务不可用";
+                        break;
+                    case 504:
+                        msg = "网络超时";
+                        break;
+                    case 505:
+                        msg = "http版本不支持该请求";
+                        break;
+                    default:
+                        msg = "http 未知错误！";
+                        break;
+                }
+                msg = {code: res.status, message: msg};//"Error code:"+res.status+","+msg;
+                reject(msg);
+            },
+
+            complete: function (res) {
+                if (this.delayed) {
+                    clearTimeout(this.delayed)
+                    this.delayed = null;
+                }
+                uni.hideLoading();
             }
-        }).catch((res) => {
-            reject(this.parseError(res));
-        }).finally((res) => {
-            if (this.delayed) {
-                clearTimeout(this.delayed)
-                this.delayed = null;
-            }
-        })
-    };
+        }
+        if (options) {
+            fn.extend(options, setting, true, true);
+        }
 
 
-    getMV = () => this.vue;
+        console.log('--------------------------------' + JSON.stringify(setting));
 
+        uni.request(setting);
+    }
 }
 
-// class Adapter {
-//     vue = null;
-//     amn = null;
-//
-//     constructor(vue, amn) {
-//         this.vue = vue;
-//         this.amn = amn;
-//     }
-//
-//     /**
-//      * @param adoname
-//      * @param rows1 vue中的，仅指定名称即可
-//      * @param vars1  vue中的，仅指定名称即可
-//      * @param options 存放回写的字段{writeback:['colname1','colname2']},如为空，表示会写所有字段
-//      */
-//     mappingData(adoname, rows1, vars1, options) {
-//         this[adoname] = {rows: rows1, vars: vars1, options: options};
-//     };
-//
-//     changeViewProperty(options){
-//         let text=null,value;
-//         for (let k in options){
-//             if (k.startsWith("/")){
-//                 text=options[k]['listData'];
-//                 //要判断text是否为plainObject
-//                 value={};
-//                 if (text) {
-//                     value=this.parseListData(text);
-//                 }
-//                 this.vue['viewData'][k.substring(1).toLowerCase()]=value;
-//             }
-//         }
-//     };
-//     parseListData(text,p1,p2){
-//         let data = {};
-//         if (text) {
-//             if ( typeof(text)=='string') {
-//                 let vs = text.split(p1 || ";");
-//                 p2 = p2 || "/";
-//                 for (let i = 0; i < vs.length; i++) {
-//                     let j = vs[i].indexOf(p2);
-//                     if (j >= 0) {
-//                         data[vs[i].substring(0, j)] = vs[i].substring(j + 1);
-//                     } else {
-//                         data[vs[i]] = vs[i];
-//                     }
-//                 }
-//             }else{
-//                 data=text;
-//             }
-//         }
-//         return data;
-//     };
-//
-//
-//     /**
-//      * 返回vue中使用的vars
-//      * @param adoname
-//      */
-//     getVars(name) {
-//         return this.vue.$data[this[name]['vars']];
-//     }
-//
-//     release() {
-//         this.vue = null;
-//         this.ados = null;
-//         this.adoname = null;
-//     }
-// }
+class Adapter {
+    vue = null;
+    amn = null;
 
-class ActiveModule {
-    _amn = '';
-    context = null;//engine
-    ados = null;
-    mapping = null;
-
-    constructor(amn, context) {
-        this._amn = amn;
-        this.ados = {};
-        this.context = context;
-        this.mapping = {};
+    constructor(vue, amn) {
+        this.vue = vue;
+        this.amn = amn;
     }
 
     /**
      *
-     * @param name 数据对象名
-     * @param rows 数据行名
-     * @param vars 数据对象变量名
+     * @param adoname
+     * @param rows1 vue中的，仅指定名称即可
+     * @param vars1  vue中的，仅指定名称即可
+     * @param options 存放回写的字段{writeback:['colname1','colname2']},如为空，表示会写所有字段
      */
-    mappingData(name, rows, vars) {
-        this.mapping[fn.convertName(name)] = {rows: rows, vars: vars || ''};
-    }
-
-    getADO = (name) => {
-        name = fn.convertName(name);
-        return this.ados[name];
-    }
-    addADO = (ado) => {
-        let name = ado.getName();
-        name = fn.convertName(name);
-        if (!this.ados[name]) {
-            this.ados[name] = ado;
-        }
-    }
-
-    /**
-     * 此处的view视同ado的name
-     * @param name view的name
-     * @param options
-     */
-    changeViewProperty(name, options) {
-        let text = null, value = null;
-        name = fn.convertName(name);
-        let ado = this.getADO(name);
-        let map = this.mapping[name];
-        if (map) {
-            let vars = this.context.vue.$data[map['vars']];
-            if (ado && vars) {
-                for (let k in options) {
-                    if (k.startsWith("/")) {
-                        text = options[k]['listData'];
-                        //要判断text是否为plainObject
-                        value = {};
-                        if (text) {
-                            value = this.context.parseListData(text);
-                        }
-                        vars[this.context.fn.convertName(k.substring(1))] = value;
-                    }
-                }
-            }
-        }
+    mappingData(adoname, rows1, vars1, options) {
+        this[adoname] = {rows: rows1, vars: vars1, options: options};
     };
-
 
     /**
      * 从服务器端就收数据(ADO的修改或整体数据)，输出到接口
@@ -1754,19 +1585,30 @@ class ActiveModule {
      * @param isclear
      */
     outData(ado, isclear) {
+        console.log('--------outData-----', ado)
+
+
         //必须事先已经建立映射关系
         let data = ado.getReflectData();
         if (data) {
             let name = ado.getName();
-            let rows0 = this.context.getMV().$data[this.mapping[name]['rows']];
-            //let rows0 = this.context.getMV().$data[this[name]['rows']];
+
+            let rows0 = this.vue.$data[this[name]['rows']];
+            console.log('get in to refresh ===========>refresh', data.type);
             if (data.type == 'refresh') {
+                console.log('get in to refresh ===========>');
                 if (!!data.clear) {
                     rows0.splice(0, rows0.length);
                 }
                 data.rows.forEach((item) => {
                     rows0.push(item)
                 })
+                this.vue.__hello = 1;
+
+                console.log('get in to refresh ===========>rows0', rows0);
+
+                // rows0 = rows0.concat(data.rows)
+                //rows0.splice(rows0.length,0,data.rows);
             } else {
                 let row = 0, rowid = -1, status = '0', rows = data.rows;
                 //ROW_ADD: '2',ROW_EDIT: '1',ROW_DELETE: '3'
@@ -1803,7 +1645,7 @@ class ActiveModule {
             let vars = data['vars'];
             if (vars) {
                 //vars 中的变量名是区分大小写的
-                let vars0 = this.context.vue.$data[this[name]['vars']];
+                let vars0 = this.vue.$data[this[name]['vars']];
                 if (vars0) {
                     for (let i in vars) {
                         vars0[i] = vars[i];
@@ -1835,14 +1677,67 @@ class ActiveModule {
         }
     }
 
+    /**
+     * 返回vue中使用的vars
+     * @param adoname
+     */
+    getVars(name) {
+        return this.vue.$data[this[name]['vars']];
+    }
+
+    release() {
+        this.vue = null;
+        this.ados = null;
+        this.adoname = null;
+    }
+}
+
+class ActiveModule {
+    _amn = '';
+    _adapter = null;
+    __rand = null;
+
+    constructor(amn) {
+        this._amn = amn;
+        this.ados = {};
+
+        let today = new Date();
+        this.__rand = Math.abs(Math.sin(today.getTime()));
+    }
+
+    getADO = (name) => {
+        name = fn.convertName(name);
+        return this.ados[name];
+    }
+    addADO = (ado) => {
+        let name = ado.getName();
+        name = fn.convertName(name);
+        if (!this.ados[name]) {
+            this.ados[name] = ado;
+        }
+    }
+    getAdapter = () => {
+        return this._adapter;
+    }
+    createAdapter = (vue, reset) => {
+        if (!this._adapter || !!reset) {
+            if (this._adapter) {
+                this._adapter.release();
+            }
+            this._adapter = new Adapter(vue, this._amn);
+        }
+        return this._adapter;
+    }
     release = () => {
-        if (this.context) {
+        if (this.ados) {
             for (let i in this.ados) {
                 this.ados[i].release();
             }
             this.ados = null;
-            this.mapping = null;
-            this.context = null;
+            if (this._adapter) {
+                this._adapter.release();
+                this._adapter = null;
+            }
         }
     }
 }
